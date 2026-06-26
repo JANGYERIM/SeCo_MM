@@ -37,7 +37,7 @@ class MaskTransformerTrainer:
 
     def forward(self, batch_data):
 
-        conds, motion, m_lens = batch_data
+        conds, conds2, motion, m_lens = batch_data
         motion = motion.detach().float().to(self.device)
         m_lens = m_lens.detach().long().to(self.device)
 
@@ -56,14 +56,32 @@ class MaskTransformerTrainer:
         return _loss, _acc
 
     def update(self, batch_data):
-        loss, acc = self.forward(batch_data)
-
+        conds, conds2, motion, m_lens = batch_data
+        motion = motion.detach().float().to(self.device)
+        m_lens = m_lens.detach().long().to(self.device)
+        code_idx, _ = self.vq_model.encode(motion)
+        m_lens_vq = m_lens // 4
+        conds = conds.to(self.device).float() if torch.is_tensor(conds) else conds
+        
+        ce_loss, _pred_ids, acc = self.t2m_transformer(code_idx[...,0], conds, m_lens_vq)
+        
+        consistency_loss = torch.tensor(0.0, device=self.device)
+        if self.opt.lambda_consistency > 0:
+            if self.opt.consistency_type == 'argmax':
+                consistency_loss = self.t2m_transformer.consistency_forward_argmax(
+                    code_idx[..., 0], conds, conds2, m_lens_vq)
+            elif self.opt.consistency_type == 'kl':
+                consistency_loss = self.t2m_transformer.consistency_forward_kl(
+                    code_idx[..., 0], conds, conds2, m_lens_vq)
+        
+        total_loss = ce_loss + self.opt.lambda_consistency * consistency_loss
+        
         self.opt_t2m_transformer.zero_grad()
-        loss.backward()
+        total_loss.backward()
         self.opt_t2m_transformer.step()
         self.scheduler.step()
 
-        return loss.item(), acc
+        return total_loss.item(), ce_loss.item(), consistency_loss.item(), acc
 
     def save(self, file_name, ep, total_it):
         t2m_trans_state_dict = self.t2m_transformer.state_dict()
@@ -134,8 +152,10 @@ class MaskTransformerTrainer:
                 if it < self.opt.warm_up_iter:
                     self.update_lr_warm_up(it, self.opt.warm_up_iter, self.opt.lr)
 
-                loss, acc = self.update(batch_data=batch)
-                logs['loss'] += loss
+                total_loss, ce_loss, cons_loss, acc = self.update(batch_data=batch)
+                logs['loss'] += total_loss
+                logs['ce_loss'] += ce_loss
+                logs['consistency_loss'] += cons_loss
                 logs['acc'] += acc
                 logs['lr'] += self.opt_t2m_transformer.param_groups[0]['lr']
 

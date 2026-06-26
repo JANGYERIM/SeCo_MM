@@ -315,9 +315,13 @@ class Text2MotionDataset(data.Dataset):
         idx = self.pointer + item
         data = self.data_dict[self.name_list[idx]]
         motion, m_length, text_list = data['motion'], data['length'], data['text']
-        # Randomly select a caption
-        text_data = random.choice(text_list)
-        caption, tokens = text_data['caption'], text_data['tokens']
+        # Randomly select two captions
+        if len(text_list) >=2:
+            text_data1,text_data2 = random.sample(text_list, 2)
+        else:
+            text_data1 = text_data2 = text_list[0]
+        caption, tokens = text_data1['caption'], text_data1['tokens']
+        caption2 = text_data2['caption']
 
         if self.opt.unit_length < 10:
             coin2 = np.random.choice(['single', 'single', 'double'])
@@ -340,7 +344,7 @@ class Text2MotionDataset(data.Dataset):
                                      ], axis=0)
         # print(word_embeddings.shape, motion.shape)
         # print(tokens)
-        return caption, motion, m_length
+        return caption, caption2, motion, m_length
 
     def reset_min_len(self, length):
         assert length <= self.max_motion_length

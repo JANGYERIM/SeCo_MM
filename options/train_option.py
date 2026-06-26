@@ -20,6 +20,8 @@ class TrainT2MOptions(BaseOptions):
         self.parser.add_argument("--seed", default=3407, type=int, help="Seed")
 
         self.parser.add_argument('--is_continue', action="store_true", help='Is this trial continuing previous state?')
+        self.parser.add_argument('--lambda_consistency', type=float, default=0.0, help='Weight for consistency loss between different captions of the same motion, 0.0=disabled')
+        self.parser.add_argument('--consistency_type', type=str, default='argmax', choices=['argmax', 'kl'], help = 'Type of consistency loss: argmax(discrete weighting) or kl (distribution-level)')
         self.parser.add_argument('--gumbel_sample', action="store_true", help='Strategy for token sampling, True: Gumbel sampling, False: Categorical sampling')
         self.parser.add_argument('--share_weight', action="store_true", help='Whether to share weight for projection/embedding, for residual transformer.')
 

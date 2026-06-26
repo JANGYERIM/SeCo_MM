@@ -1,0 +1,79 @@
+------------ Options -------------
+batch_size: 64
+checkpoints_dir: ./checkpoints
+cond_drop_prob: 0.1
+consistency_type: argmax
+dataset_name: t2m
+dropout: 0.2
+eval_every_e: 10
+ff_size: 1024
+force_mask: False
+gamma: 0.1
+gpu_id: 0
+gumbel_sample: False
+is_continue: False
+is_train: True
+lambda_consistency: 1.0
+latent_dim: 384
+log_every: 50
+lr: 0.0002
+max_epoch: 500
+max_motion_length: 196
+milestones: [50000]
+n_heads: 6
+n_layers: 8
+name: M_P1_V1-2
+save_latest: 500
+seed: 3407
+share_weight: False
+unit_length: 4
+vq_name: rvq_nq6_dc512_nc512_noshare_qdp0.2
+warm_up_iter: 2000
+-------------- End ----------------
+Reading ./checkpoints/t2m/rvq_nq6_dc512_nc512_noshare_qdp0.2/opt.txt
+Loading VQ Model rvq_nq6_dc512_nc512_noshare_qdp0.2
+latent_dim: 384, ff_size: 1024, nlayers: 8, nheads: 6, dropout: 0.2
+Loading CLIP...
+Total parameters of all models: 12.05M
+  0%|          | 0/23384 [00:00<?, ?it/s]  1%|▏         | 333/23384 [00:00<00:06, 3329.53it/s]  3%|▎         | 666/23384 [00:00<00:06, 3287.86it/s]  4%|▍         | 1007/23384 [00:00<00:06, 3339.59it/s]  6%|▌         | 1353/23384 [00:00<00:06, 3385.91it/s]  7%|▋         | 1692/23384 [00:00<00:06, 3366.22it/s]  9%|▊         | 2032/23384 [00:00<00:06, 3374.86it/s] 10%|█         | 2370/23384 [00:00<00:06, 3371.87it/s] 12%|█▏        | 2718/23384 [00:00<00:06, 3405.89it/s] 13%|█▎        | 3061/23384 [00:00<00:05, 3411.27it/s] 15%|█▍        | 3403/23384 [00:01<00:06, 3261.78it/s] 16%|█▌        | 3731/23384 [00:01<00:06, 3157.63it/s] 17%|█▋        | 4049/23384 [00:01<00:06, 3106.37it/s] 19%|█▊        | 4361/23384 [00:01<00:06, 3085.05it/s] 20%|█▉        | 4671/23384 [00:01<00:06, 3043.13it/s] 21%|██▏       | 4976/23384 [00:01<00:06, 3015.04it/s] 23%|██▎       | 5278/23384 [00:01<00:07, 2475.50it/s] 24%|██▍       | 5573/23384 [00:01<00:06, 2595.88it/s] 25%|██▌       | 5863/23384 [00:01<00:06, 2674.61it/s] 26%|██▋       | 6160/23384 [00:02<00:06, 2754.24it/s] 28%|██▊       | 6454/23384 [00:02<00:06, 2805.91it/s] 29%|██▉       | 6758/23384 [00:02<00:05, 2871.91it/s] 30%|███       | 7051/23384 [00:02<00:05, 2888.17it/s] 31%|███▏      | 7353/23384 [00:02<00:05, 2924.27it/s] 33%|███▎      | 7648/23384 [00:02<00:05, 2920.87it/s] 34%|███▍      | 7954/23384 [00:02<00:05, 2959.05it/s] 35%|███▌      | 8252/23384 [00:02<00:05, 2935.07it/s] 37%|███▋      | 8553/23384 [00:02<00:05, 2956.09it/s] 38%|███▊      | 8859/23384 [00:02<00:04, 2984.27it/s] 39%|███▉      | 9158/23384 [00:03<00:04, 2962.03it/s] 40%|████      | 9455/23384 [00:03<00:04, 2940.05it/s] 42%|████▏     | 9750/23384 [00:03<00:04, 2940.04it/s] 43%|████▎     | 10052/23384 [00:03<00:04, 2961.04it/s] 44%|████▍     | 10349/23384 [00:03<00:04, 2953.66it/s] 46%|████▌     | 10650/23384 [00:03<00:04, 2968.99it/s] 47%|████▋     | 10947/23384 [00:03<00:04, 2965.43it/s] 48%|████▊     | 11244/23384 [00:03<00:04, 2950.08it/s] 49%|████▉     | 11540/23384 [00:03<00:04, 2947.98it/s] 51%|█████     | 11835/23384 [00:04<00:04, 2427.32it/s] 52%|█████▏    | 12133/23384 [00:04<00:04, 2569.16it/s] 53%|█████▎    | 12425/23384 [00:04<00:04, 2661.68it/s] 54%|█████▍    | 12726/23384 [00:04<00:03, 2757.51it/s] 56%|█████▌    | 13028/23384 [00:04<00:03, 2829.68it/s] 57%|█████▋    | 13317/23384 [00:04<00:03, 2823.66it/s] 58%|█████▊    | 13615/23384 [00:04<00:03, 2867.23it/s] 59%|█████▉    | 13913/23384 [00:04<00:03, 2898.85it/s] 61%|██████    | 14209/23384 [00:04<00:03, 2915.86it/s] 62%|██████▏   | 14510/23384 [00:04<00:03, 2941.25it/s] 63%|██████▎   | 14809/23384 [00:05<00:02, 2952.98it/s] 65%|██████▍   | 15108/23384 [00:05<00:02, 2961.31it/s] 66%|██████▌   | 15405/23384 [00:05<00:02, 2935.62it/s] 67%|██████▋   | 15713/23384 [00:05<00:02, 2978.06it/s] 68%|██████▊   | 16012/23384 [00:05<00:02, 2967.93it/s] 70%|██████▉   | 16311/23384 [00:05<00:02, 2972.50it/s] 71%|███████   | 16609/23384 [00:05<00:02, 2937.74it/s] 72%|███████▏  | 16911/23384 [00:05<00:02, 2961.68it/s] 74%|███████▎  | 17208/23384 [00:05<00:02, 2949.56it/s] 75%|███████▍  | 17504/23384 [00:05<00:02, 2937.77it/s] 76%|███████▌  | 17803/23384 [00:06<00:01, 2950.59it/s] 77%|███████▋  | 18103/23384 [00:06<00:01, 2962.11it/s] 79%|███████▊  | 18403/23384 [00:06<00:01, 2972.43it/s] 80%|███████▉  | 18702/23384 [00:06<00:01, 2976.27it/s] 81%|████████▏ | 19001/23384 [00:06<00:01, 2979.08it/s] 83%|████████▎ | 19299/23384 [00:06<00:01, 2975.13it/s] 84%|████████▍ | 19598/23384 [00:06<00:01, 2976.97it/s] 85%|████████▌ | 19896/23384 [00:06<00:01, 2966.56it/s] 86%|████████▋ | 20194/23384 [00:06<00:01, 2962.40it/s] 88%|████████▊ | 20491/23384 [00:07<00:01, 2291.17it/s] 89%|████████▉ | 20790/23384 [00:07<00:01, 2462.21it/s] 90%|█████████ | 21085/23384 [00:07<00:00, 2587.29it/s] 91%|█████████▏| 21378/23384 [00:07<00:00, 2680.04it/s] 93%|█████████▎| 21672/23384 [00:07<00:00, 2750.38it/s] 94%|█████████▍| 21963/23384 [00:07<00:00, 2795.06it/s] 95%|█████████▌| 22258/23384 [00:07<00:00, 2836.66it/s] 96%|█████████▋| 22549/23384 [00:07<00:00, 2855.90it/s] 98%|█████████▊| 22838/23384 [00:07<00:00, 2845.51it/s] 99%|█████████▉| 23132/23384 [00:07<00:00, 2872.65it/s]100%|██████████| 23384/23384 [00:08<00:00, 2913.14it/s]
+  0%|          | 0/1460 [00:00<?, ?it/s] 20%|█▉        | 289/1460 [00:00<00:00, 2883.81it/s] 40%|███▉      | 580/1460 [00:00<00:00, 2894.16it/s] 60%|██████    | 878/1460 [00:00<00:00, 2932.63it/s] 80%|████████  | 1172/1460 [00:00<00:00, 2891.22it/s]100%|██████████| 1460/1460 [00:00<00:00, 2881.73it/s]
+Reading ./checkpoints/t2m/Comp_v6_KLD005/opt.txt
+Loading dataset t2m ...
+  0%|          | 0/1460 [00:00<?, ?it/s] 19%|█▉        | 284/1460 [00:00<00:00, 2839.08it/s] 39%|███▉      | 568/1460 [00:00<00:00, 2823.82it/s] 58%|█████▊    | 851/1460 [00:00<00:00, 2823.03it/s] 78%|███████▊  | 1134/1460 [00:00<00:00, 2821.83it/s] 97%|█████████▋| 1417/1460 [00:00<00:00, 2812.29it/s]100%|██████████| 1460/1460 [00:00<00:00, 2822.87it/s]Pointer Pointing at 0
+Ground Truth Dataset Loading Completed!!!
+Reading ./checkpoints/t2m/Comp_v6_KLD005/opt.txt
+Loading Evaluation Model Wrapper (Epoch 28) Completed!!
+Total Epochs: 500, Total Iters: 185500
+Iters Per Epoch, Training: 0371, Validation: 023
+
+--> 	 Eva. Ep 0 :, FID. 50.2186, Diversity Real. 9.5821, Diversity. 2.9125, R_precision_real. [0.52445652 0.71331522 0.81521739], R_precision. [0.04144022 0.07404891 0.1107337 ], matching_score_real. 2.9023270399674126, matching_score_pred. 8.505413169446198
+--> --> 	 FID Improved from 100.00000 to 50.21860 !!!
+--> --> 	 matching_score Improved from 100.00000 to 8.50541 !!!
+--> --> 	 Diversity Improved from 100.00000 to 2.91251 !!!
+--> --> 	 Top1 Improved from 0.0000 to 0.0414 !!!
+--> --> 	 Top2 Improved from 0.0000 to 0.0740 !!!
+--> --> 	 Top3 Improved from 0.0000 to 0.1107 !!!
+/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:450: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  mids = trans.generate(clip_text, m_length//4, time_steps, cond_scale, temperature=1)
+/nas2/data/dpfla3573/code/MM_SeCo/models/t2m_eval_wrapper.py:73: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  m_lens = m_lens // self.opt.unit_length
+ep/it: 0-  49 niter:    50  0m 31s (- 1975m 35s) completed:  0%) loss: 18.8295  ce_loss: 6.2695  consistency_loss: 12.5601  acc: 0.0055  lr: 0.0000 
+ep/it: 0-  99 niter:   100  0m 50s (- 1554m 19s) completed:  0%) loss: 18.4979  ce_loss: 6.1339  consistency_loss: 12.3640  acc: 0.0197  lr: 0.0000 
+ep/it: 0- 149 niter:   150  1m 8s (- 1400m 54s) completed:  0%) loss: 18.2244  ce_loss: 6.0256  consistency_loss: 12.1989  acc: 0.0248  lr: 0.0000 
+ep/it: 0- 199 niter:   200  1m 26s (- 1331m 12s) completed:  0%) loss: 17.9871  ce_loss: 5.9501  consistency_loss: 12.0371  acc: 0.0218  lr: 0.0000 
+ep/it: 0- 249 niter:   250  1m 44s (- 1288m 16s) completed:  0%) loss: 17.8297  ce_loss: 5.8993  consistency_loss: 11.9304  acc: 0.0216  lr: 0.0000 
+ep/it: 0- 299 niter:   300  2m 2s (- 1259m 31s) completed:  0%) loss: 17.7759  ce_loss: 5.8681  consistency_loss: 11.9077  acc: 0.0230  lr: 0.0000 
+ep/it: 0- 349 niter:   350  2m 20s (- 1240m 29s) completed:  0%) loss: 17.7268  ce_loss: 5.8503  consistency_loss: 11.8765  acc: 0.0207  lr: 0.0000 
+Validation time:
+/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:63: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  m_lens_vq = m_lens // 4
+Validation loss:5.825, accuracy:0.023
+Improved accuracy from 0.00 to 0.023199164794515007!!!
+/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:46: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  m_lens = m_lens // 4
+--> 	 Eva. Ep 1 :, FID. 35.1362, Diversity Real. 9.4373, Diversity. 6.1066, R_precision_real. [0.50951087 0.71195652 0.81046196], R_precision. [0.0482337  0.08763587 0.13519022], matching_score_real. 2.8742519150609556, matching_score_pred. 8.738846291666446
+--> --> 	 FID Improved from 50.21860 to 35.13621 !!!
+--> --> 	 Diversity Improved from 2.91251 to 6.10660 !!!
+--> --> 	 Top1 Improved from 0.0414 to 0.0482 !!!
+--> --> 	 Top2 Improved from 0.0740 to 0.0876 !!!
+--> --> 	 Top3 Improved from 0.1107 to 0.1352 !!!

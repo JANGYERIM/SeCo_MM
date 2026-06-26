@@ -303,6 +303,139 @@ class MaskTransformer(nn.Module):
 
         return ce_loss, pred_id, acc
 
+    def consistency_forward_argmax(self, ids, y1, y2, m_lens):
+        bs, ntokens = ids.shape
+        device = ids.device
+        
+        non_pad_mask = lengths_to_mask(m_lens, ntokens) #(b, n)
+        ids = torch.where(non_pad_mask, ids, self.pad_id)
+        
+        # 동일한 mask 생성
+        rand_time = uniform((bs,), device=device)
+        rand_mask_probs = self.noise_schedule(rand_time)
+        num_token_masked = (ntokens * rand_mask_probs).round().clamp(min=1)
+        batch_randperm = torch.rand((bs, ntokens), device=device).argsort(dim=-1)
+        mask = batch_randperm < num_token_masked.unsqueeze(-1)
+        mask &= non_pad_mask
+        
+        labels = torch.where(mask, ids, self.mask_id)
+        
+         # BERT masking (두 caption에 동일하게 적용)
+        x_ids = ids.clone()
+        mask_rid = get_mask_subset_prob(mask, 0.1)
+        rand_id = torch.randint_like(x_ids, high=self.opt.num_tokens)
+        x_ids = torch.where(mask_rid, rand_id, x_ids)
+        mask_mid = get_mask_subset_prob(mask & ~mask_rid, 0.88)
+        x_ids = torch.where(mask_mid, self.mask_id, x_ids)
+        
+        # CLIP encoding
+        with torch.no_grad():
+            cond1 = self.encode_text(y1)
+            cond2 = self.encode_text(y2)
+        
+        # 동일한 CFG dropout mask 적용
+        dropout_mask = torch.bernoulli(
+            torch.ones(bs, device=device) * self.cond_drop_prob
+        ).view(bs, 1)
+        cond1 = cond1 * (1. - dropout_mask)
+        cond2 = cond2 * (1. - dropout_mask)
+
+        # trans_forward 내부 mask_cond가 추가 dropout 걸지 않도록 일시 비활성화
+        orig_drop_prob = self.cond_drop_prob
+        self.cond_drop_prob = 0.0
+
+        # 두 caption으로 forward
+        logits1 = self.trans_forward(x_ids, cond1, ~non_pad_mask)  # (b, ntoken, seqlen)
+        logits2 = self.trans_forward(x_ids, cond2, ~non_pad_mask)
+
+        self.cond_drop_prob = orig_drop_prob
+
+        #argmax predictions
+        with torch.no_grad():
+            pred1 = logits1.argmax(dim=1)
+            pred2 = logits2.argmax(dim=1)
+            both_wrong = (pred1 != ids) & (pred2 != ids)
+            disagree = (pred1 != pred2)
+            inconsistent_mask = both_wrong & disagree & mask
+        
+        if inconsistent_mask.sum() == 0:
+            return torch.tensor(0.0, device=device, requires_grad=True)
+        
+        # inconsistent 위치에서만 추가 CE Loss
+        ce1 = F.cross_entropy(logits1, labels, ignore_index=self.mask_id, reduction='none')
+        ce2 = F.cross_entropy(logits2, labels, ignore_index=self.mask_id, reduction='none')
+        consistency_loss = ((ce1 + ce2) * inconsistent_mask.float()).sum() / inconsistent_mask.sum()
+        return consistency_loss
+    
+    def consistency_forward_kl(self, ids, y1, y2, m_lens):
+        bs, ntokens = ids.shape
+        device = ids.device
+
+        non_pad_mask = lengths_to_mask(m_lens, ntokens)
+        ids = torch.where(non_pad_mask, ids, self.pad_id)
+
+        # 동일한 mask 생성
+        rand_time = uniform((bs,), device=device)
+        rand_mask_probs = self.noise_schedule(rand_time)
+        num_token_masked = (ntokens * rand_mask_probs).round().clamp(min=1)
+        batch_randperm = torch.rand((bs, ntokens), device=device).argsort(dim=-1)
+        mask = batch_randperm < num_token_masked.unsqueeze(-1)
+        mask &= non_pad_mask
+
+        # BERT masking
+        x_ids = ids.clone()
+        mask_rid = get_mask_subset_prob(mask, 0.1)
+        rand_id = torch.randint_like(x_ids, high=self.opt.num_tokens)
+        x_ids = torch.where(mask_rid, rand_id, x_ids)
+        mask_mid = get_mask_subset_prob(mask & ~mask_rid, 0.88)
+        x_ids = torch.where(mask_mid, self.mask_id, x_ids)
+        
+         # CLIP encoding
+        with torch.no_grad():
+            cond1 = self.encode_text(y1)
+            cond2 = self.encode_text(y2)
+
+        # 동일한 CFG dropout mask 적용
+        dropout_mask = torch.bernoulli(
+            torch.ones(bs, device=device) * self.cond_drop_prob
+        ).view(bs, 1)
+        cond1 = cond1 * (1. - dropout_mask)
+        cond2 = cond2 * (1. - dropout_mask)
+
+        # trans_forward 내부 mask_cond가 추가 dropout 걸지 않도록 일시 비활성화
+        orig_drop_prob = self.cond_drop_prob
+        self.cond_drop_prob = 0.0
+
+        logits1 = self.trans_forward(x_ids, cond1, ~non_pad_mask)  # (b, ntoken, seqlen)
+        logits2 = self.trans_forward(x_ids, cond2, ~non_pad_mask)
+
+        self.cond_drop_prob = orig_drop_prob
+
+        # (b, ntoken, seqlen) -> (b, seqlen, ntoken)
+        logits1 = logits1.permute(0, 2, 1)
+        logits2 = logits2.permute(0, 2, 1)
+
+        p1     = F.softmax(logits1, dim=-1)
+        p2     = F.softmax(logits2, dim=-1)
+        log_p1 = F.log_softmax(logits1, dim=-1)
+        log_p2 = F.log_softmax(logits2, dim=-1)
+
+        # w_i = 1 - (p1(GT) + p2(GT)) / 2
+        gt_idx = ids.clone()
+        gt_idx[~mask] = 0  # gather용 placeholder
+        p1_gt = p1.gather(2, gt_idx.unsqueeze(-1)).squeeze(-1)  # (b, seqlen)
+        p2_gt = p2.gather(2, gt_idx.unsqueeze(-1)).squeeze(-1)
+        w = (1. - (p1_gt + p2_gt) / 2.).detach()               # gradient 끊음
+
+        # Symmetric KL per position
+        kl_12 = F.kl_div(log_p2, p1, reduction='none').sum(dim=-1)  # (b, seqlen)
+        kl_21 = F.kl_div(log_p1, p2, reduction='none').sum(dim=-1)
+        sym_kl = (kl_12 + kl_21) * 0.5
+
+        consistency_loss = (w * sym_kl * mask.float()).sum() / mask.sum().clamp(min=1)
+        return consistency_loss
+                
+        
     def forward_with_cond_scale(self,
                                 motion_ids,
                                 cond_vector,
