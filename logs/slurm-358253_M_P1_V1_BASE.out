@@ -67,3 +67,13 @@ ep/it: 0- 349 niter:   350  2m 20s (- 1234m 40s) completed:  0%) loss: 17.7268  
 Validation time:
 /nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:63: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
   m_lens_vq = m_lens // 4
+Validation loss:5.825, accuracy:0.023
+Improved accuracy from 0.00 to 0.023199164794515007!!!
+/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:46: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  m_lens = m_lens // 4
+--> 	 Eva. Ep 1 :, FID. 35.1362, Diversity Real. 9.4373, Diversity. 6.1066, R_precision_real. [0.50951087 0.71195652 0.81046196], R_precision. [0.0482337  0.08763587 0.13519022], matching_score_real. 2.8742519150609556, matching_score_pred. 8.738846291666446
+--> --> 	 FID Improved from 50.21860 to 35.13621 !!!
+--> --> 	 Diversity Improved from 2.91251 to 6.10660 !!!
+--> --> 	 Top1 Improved from 0.0414 to 0.0482 !!!
+--> --> 	 Top2 Improved from 0.0740 to 0.0876 !!!
+--> --> 	 Top3 Improved from 0.1107 to 0.1352 !!!
