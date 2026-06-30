@@ -1,0 +1,3 @@
+caption1: a man walks in a curve, then a straight line, then doubles back.
+caption2: a person walks to his right.
+caption3: a man walks forward, turns right and walks, stops, turns around and runs, stops again to turn around and runs again.

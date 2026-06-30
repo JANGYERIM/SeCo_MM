@@ -36,52 +36,47 @@ class MaskTransformerTrainer:
 
 
     def forward(self, batch_data):
-
-        conds, conds2, motion, m_lens = batch_data
+        captions_list, motion, m_lens = batch_data
         motion = motion.detach().float().to(self.device)
         m_lens = m_lens.detach().long().to(self.device)
 
-        # (b, n, q)
         code_idx, _ = self.vq_model.encode(motion)
         m_lens = m_lens // 4
 
-        conds = conds.to(self.device).float() if torch.is_tensor(conds) else conds
-
-        # loss_dict = {}
-        # self.pred_ids = []
-        # self.acc = []
+        # validation: 샘플당 캡션 1개만 사용
+        conds = [caps[0] for caps in captions_list]
 
         _loss, _pred_ids, _acc = self.t2m_transformer(code_idx[..., 0], conds, m_lens)
 
         return _loss, _acc
 
     def update(self, batch_data):
-        conds, conds2, motion, m_lens = batch_data
+        captions_list, motion, m_lens = batch_data
         motion = motion.detach().float().to(self.device)
         m_lens = m_lens.detach().long().to(self.device)
+
         code_idx, _ = self.vq_model.encode(motion)
         m_lens_vq = m_lens // 4
-        conds = conds.to(self.device).float() if torch.is_tensor(conds) else conds
-        
-        ce_loss, _pred_ids, acc = self.t2m_transformer(code_idx[...,0], conds, m_lens_vq)
-        
-        consistency_loss = torch.tensor(0.0, device=self.device)
-        if self.opt.lambda_consistency > 0:
-            if self.opt.consistency_type == 'argmax':
-                consistency_loss = self.t2m_transformer.consistency_forward_argmax(
-                    code_idx[..., 0], conds, conds2, m_lens_vq)
-            elif self.opt.consistency_type == 'kl':
-                consistency_loss = self.t2m_transformer.consistency_forward_kl(
-                    code_idx[..., 0], conds, conds2, m_lens_vq)
-        
-        total_loss = ce_loss + self.opt.lambda_consistency * consistency_loss
-        
+        ids = code_idx[..., 0]  # (b, seqlen)
+
+        # 배치 확장: 각 샘플의 모든 캡션을 독립 샘플로
+        counts = torch.tensor([len(caps) for caps in captions_list], device=self.device)
+        flat_captions = [cap for caps in captions_list for cap in caps]
+        ids_expanded = torch.repeat_interleave(ids, counts, dim=0)
+        m_lens_expanded = torch.repeat_interleave(m_lens_vq, counts, dim=0)
+
+        loss, _pred_ids, acc = self.t2m_transformer(
+            ids_expanded, flat_captions, m_lens_expanded,
+            counts=counts,
+            lambda_consistency=self.opt.lambda_consistency
+        )
+
         self.opt_t2m_transformer.zero_grad()
-        total_loss.backward()
+        loss.backward()
         self.opt_t2m_transformer.step()
         self.scheduler.step()
 
-        return total_loss.item(), ce_loss.item(), consistency_loss.item(), acc
+        return loss.item(), acc
 
     def save(self, file_name, ep, total_it):
         t2m_trans_state_dict = self.t2m_transformer.state_dict()
@@ -152,10 +147,8 @@ class MaskTransformerTrainer:
                 if it < self.opt.warm_up_iter:
                     self.update_lr_warm_up(it, self.opt.warm_up_iter, self.opt.lr)
 
-                total_loss, ce_loss, cons_loss, acc = self.update(batch_data=batch)
-                logs['loss'] += total_loss
-                logs['ce_loss'] += ce_loss
-                logs['consistency_loss'] += cons_loss
+                loss, acc = self.update(batch_data=batch)
+                logs['loss'] += loss
                 logs['acc'] += acc
                 logs['lr'] += self.opt_t2m_transformer.param_groups[0]['lr']
 

@@ -1,0 +1,3 @@
+caption1: a person picks something up on the left and sets it down on the right.
+caption2: a person lifts something with both hands, moves it to his right and sets it down.
+caption3: a man picks up an object with both of his hands on his right side and then places it down on his left side.

@@ -239,19 +239,11 @@ class MaskTransformer(nn.Module):
         logits = self.output_process(output) #(seqlen, b, e) -> (b, ntoken, seqlen)
         return logits
 
-    def forward(self, ids, y, m_lens):
-        '''
-        :param ids: (b, n)
-        :param y: raw text for cond_mode=text, (b, ) for cond_mode=action
-        :m_lens: (b,)
-        :return:
-        '''
-
+    def forward(self, ids, y, m_lens, counts=None, lambda_consistency=0.0):
         bs, ntokens = ids.shape
         device = ids.device
 
-        # Positions that are PADDED are ALL FALSE
-        non_pad_mask = lengths_to_mask(m_lens, ntokens) #(b, n)
+        non_pad_mask = lengths_to_mask(m_lens, ntokens)  # (bs, n)
         ids = torch.where(non_pad_mask, ids, self.pad_id)
 
         force_mask = False
@@ -266,175 +258,110 @@ class MaskTransformer(nn.Module):
         else:
             raise NotImplementedError("Unsupported condition mode!!!")
 
+        if counts is not None:
+            b = len(counts)
+            # 모션별 시작 인덱스 (첫 번째 캡션 행)
+            start_indices = torch.zeros(b, dtype=torch.long, device=device)
+            if b > 1:
+                start_indices[1:] = counts[:-1].cumsum(0)
 
-        '''
-        Prepare mask
-        '''
-        rand_time = uniform((bs,), device=device)
-        rand_mask_probs = self.noise_schedule(rand_time)
-        num_token_masked = (ntokens * rand_mask_probs).round().clamp(min=1)
+            ids_b          = ids[start_indices]           # (b, ntokens)
+            non_pad_mask_b = non_pad_mask[start_indices]  # (b, ntokens)
 
-        batch_randperm = torch.rand((bs, ntokens), device=device).argsort(dim=-1)
-        # Positions to be MASKED are ALL TRUE
-        mask = batch_randperm < num_token_masked.unsqueeze(-1)
+            # mask를 모션 단위로 한 번 생성 → K개 캡션에 공유
+            rand_time = uniform((b,), device=device)
+            rand_mask_probs = self.noise_schedule(rand_time)
+            num_token_masked = (ntokens * rand_mask_probs).round().clamp(min=1)
+            batch_randperm = torch.rand((b, ntokens), device=device).argsort(dim=-1)
+            mask_b = batch_randperm < num_token_masked.unsqueeze(-1)
+            mask_b &= non_pad_mask_b
 
-        # Positions to be MASKED must also be NON-PADDED
-        mask &= non_pad_mask
+            # x_ids도 모션 단위로 한 번 생성 → K개 캡션에 공유
+            x_ids_b = ids_b.clone()
+            mask_rid_b = get_mask_subset_prob(mask_b, 0.1)
+            rand_id_b = torch.randint_like(x_ids_b, high=self.opt.num_tokens)
+            x_ids_b = torch.where(mask_rid_b, rand_id_b, x_ids_b)
+            mask_mid_b = get_mask_subset_prob(mask_b & ~mask_rid_b, 0.88)
+            x_ids_b = torch.where(mask_mid_b, self.mask_id, x_ids_b)
 
-        # Note this is our training target, not input
+            mask  = torch.repeat_interleave(mask_b,   counts, dim=0)   # (bs, ntokens)
+            x_ids = torch.repeat_interleave(x_ids_b, counts, dim=0)   # (bs, ntokens)
+        else:
+            rand_time = uniform((bs,), device=device)
+            rand_mask_probs = self.noise_schedule(rand_time)
+            num_token_masked = (ntokens * rand_mask_probs).round().clamp(min=1)
+            batch_randperm = torch.rand((bs, ntokens), device=device).argsort(dim=-1)
+            mask = batch_randperm < num_token_masked.unsqueeze(-1)
+            mask &= non_pad_mask
+
+            x_ids = ids.clone()
+            mask_rid = get_mask_subset_prob(mask, 0.1)
+            rand_id = torch.randint_like(x_ids, high=self.opt.num_tokens)
+            x_ids = torch.where(mask_rid, rand_id, x_ids)
+            mask_mid = get_mask_subset_prob(mask & ~mask_rid, 0.88)
+            x_ids = torch.where(mask_mid, self.mask_id, x_ids)
+
         labels = torch.where(mask, ids, self.mask_id)
-
-        x_ids = ids.clone()
-
-        # Further Apply Bert Masking Scheme
-        # Step 1: 10% replace with an incorrect token
-        mask_rid = get_mask_subset_prob(mask, 0.1)
-        rand_id = torch.randint_like(x_ids, high=self.opt.num_tokens)
-        x_ids = torch.where(mask_rid, rand_id, x_ids)
-        # Step 2: 90% x 10% replace with correct token, and 90% x 88% replace with mask token
-        mask_mid = get_mask_subset_prob(mask & ~mask_rid, 0.88)
-
-        # mask_mid = mask
-
-        x_ids = torch.where(mask_mid, self.mask_id, x_ids)
-
         logits = self.trans_forward(x_ids, cond_vector, ~non_pad_mask, force_mask)
-        ce_loss, pred_id, acc = cal_performance(logits, labels, ignore_index=self.mask_id)
 
-        return ce_loss, pred_id, acc
+        if counts is not None:
+            # per-token CE: (bs, seqlen)
+            ce_per_token = F.cross_entropy(logits, labels, ignore_index=self.mask_id, reduction='none')
+            # per-sample mean (토큰 균등)
+            ce_per_sample = (ce_per_token * mask.float()).sum(dim=1) / mask.float().sum(dim=1).clamp(min=1)
+            # per-motion mean (캡션 간 균등)
+            motion_idx = torch.repeat_interleave(torch.arange(b, device=device), counts)
+            motion_ce = torch.zeros(b, device=device).scatter_add(0, motion_idx, ce_per_sample) / counts.float()
+            ce_loss = motion_ce.mean()
 
-    def consistency_forward_argmax(self, ids, y1, y2, m_lens):
-        bs, ntokens = ids.shape
-        device = ids.device
-        
-        non_pad_mask = lengths_to_mask(m_lens, ntokens) #(b, n)
-        ids = torch.where(non_pad_mask, ids, self.pad_id)
-        
-        # 동일한 mask 생성
-        rand_time = uniform((bs,), device=device)
-        rand_mask_probs = self.noise_schedule(rand_time)
-        num_token_masked = (ntokens * rand_mask_probs).round().clamp(min=1)
-        batch_randperm = torch.rand((bs, ntokens), device=device).argsort(dim=-1)
-        mask = batch_randperm < num_token_masked.unsqueeze(-1)
-        mask &= non_pad_mask
-        
-        labels = torch.where(mask, ids, self.mask_id)
-        
-         # BERT masking (두 caption에 동일하게 적용)
-        x_ids = ids.clone()
-        mask_rid = get_mask_subset_prob(mask, 0.1)
-        rand_id = torch.randint_like(x_ids, high=self.opt.num_tokens)
-        x_ids = torch.where(mask_rid, rand_id, x_ids)
-        mask_mid = get_mask_subset_prob(mask & ~mask_rid, 0.88)
-        x_ids = torch.where(mask_mid, self.mask_id, x_ids)
-        
-        # CLIP encoding
+            pred_id = logits.argmax(dim=1)
+            acc = (pred_id == labels).masked_select(mask).float().mean().item()
+
+            if lambda_consistency > 0:
+                cons_loss = self._consistency_option1(logits, labels, ids, mask, counts)
+                return ce_loss + lambda_consistency * cons_loss, pred_id, acc
+            return ce_loss, pred_id, acc
+        else:
+            ce_loss, pred_id, acc = cal_performance(logits, labels, ignore_index=self.mask_id)
+            return ce_loss, pred_id, acc
+
+    def _consistency_option1(self, logits, labels, ids, mask, counts):
+        '''
+        조건1: 모든 캡션이 해당 위치를 GT와 다르게 예측 → +1 가중치
+        조건2: 3개 이상의 캡션이 해당 위치에서 서로 다른 값을 예측 → +1 가중치
+        두 조건은 독립적으로 합산 (둘 다 만족하면 +2)
+        '''
         with torch.no_grad():
-            cond1 = self.encode_text(y1)
-            cond2 = self.encode_text(y2)
-        
-        # 동일한 CFG dropout mask 적용
-        dropout_mask = torch.bernoulli(
-            torch.ones(bs, device=device) * self.cond_drop_prob
-        ).view(bs, 1)
-        cond1 = cond1 * (1. - dropout_mask)
-        cond2 = cond2 * (1. - dropout_mask)
+            preds = logits.argmax(dim=1)  # (b*K_total, seqlen)
+            cons_weight = torch.zeros_like(mask, dtype=torch.float)
 
-        # trans_forward 내부 mask_cond가 추가 dropout 걸지 않도록 일시 비활성화
-        orig_drop_prob = self.cond_drop_prob
-        self.cond_drop_prob = 0.0
+            start = 0
+            for k in counts:
+                k = k.item()
+                preds_i  = preds[start:start+k]  # (K_i, seqlen)
+                gt_i     = ids[start]             # (seqlen)
+                masked   = mask[start]            # (seqlen) — 공유 mask이므로 첫 행과 동일
 
-        # 두 caption으로 forward
-        logits1 = self.trans_forward(x_ids, cond1, ~non_pad_mask)  # (b, ntoken, seqlen)
-        logits2 = self.trans_forward(x_ids, cond2, ~non_pad_mask)
+                # 조건1: 모든 캡션이 GT와 다르게 예측
+                all_wrong = (preds_i != gt_i.unsqueeze(0)).all(dim=0)  # (seqlen)
 
-        self.cond_drop_prob = orig_drop_prob
+                # 조건2: 3개 이상의 서로 다른 값 예측
+                if k >= 3:
+                    sorted_preds = preds_i.sort(dim=0).values                        # (K_i, seqlen)
+                    unique_count = (sorted_preds[1:] != sorted_preds[:-1]).sum(dim=0) + 1  # (seqlen)
+                    diverse = unique_count >= 3
+                else:
+                    diverse = torch.zeros(preds_i.shape[1], dtype=torch.bool, device=preds_i.device)
 
-        #argmax predictions
-        with torch.no_grad():
-            pred1 = logits1.argmax(dim=1)
-            pred2 = logits2.argmax(dim=1)
-            both_wrong = (pred1 != ids) & (pred2 != ids)
-            disagree = (pred1 != pred2)
-            inconsistent_mask = both_wrong & disagree & mask
-        
-        if inconsistent_mask.sum() == 0:
-            return torch.tensor(0.0, device=device, requires_grad=True)
-        
-        # inconsistent 위치에서만 추가 CE Loss
-        ce1 = F.cross_entropy(logits1, labels, ignore_index=self.mask_id, reduction='none')
-        ce2 = F.cross_entropy(logits2, labels, ignore_index=self.mask_id, reduction='none')
-        consistency_loss = ((ce1 + ce2) * inconsistent_mask.float()).sum() / inconsistent_mask.sum()
-        return consistency_loss
-    
-    def consistency_forward_kl(self, ids, y1, y2, m_lens):
-        bs, ntokens = ids.shape
-        device = ids.device
+                # all_wrong → +1, all_wrong & diverse → +1 more (총 +2)
+                weight_i = (all_wrong.float() + (all_wrong & diverse).float()) * masked.float()
+                cons_weight[start:start+k] = weight_i.unsqueeze(0).expand(k, -1)
 
-        non_pad_mask = lengths_to_mask(m_lens, ntokens)
-        ids = torch.where(non_pad_mask, ids, self.pad_id)
+                start += k
 
-        # 동일한 mask 생성
-        rand_time = uniform((bs,), device=device)
-        rand_mask_probs = self.noise_schedule(rand_time)
-        num_token_masked = (ntokens * rand_mask_probs).round().clamp(min=1)
-        batch_randperm = torch.rand((bs, ntokens), device=device).argsort(dim=-1)
-        mask = batch_randperm < num_token_masked.unsqueeze(-1)
-        mask &= non_pad_mask
-
-        # BERT masking
-        x_ids = ids.clone()
-        mask_rid = get_mask_subset_prob(mask, 0.1)
-        rand_id = torch.randint_like(x_ids, high=self.opt.num_tokens)
-        x_ids = torch.where(mask_rid, rand_id, x_ids)
-        mask_mid = get_mask_subset_prob(mask & ~mask_rid, 0.88)
-        x_ids = torch.where(mask_mid, self.mask_id, x_ids)
-        
-         # CLIP encoding
-        with torch.no_grad():
-            cond1 = self.encode_text(y1)
-            cond2 = self.encode_text(y2)
-
-        # 동일한 CFG dropout mask 적용
-        dropout_mask = torch.bernoulli(
-            torch.ones(bs, device=device) * self.cond_drop_prob
-        ).view(bs, 1)
-        cond1 = cond1 * (1. - dropout_mask)
-        cond2 = cond2 * (1. - dropout_mask)
-
-        # trans_forward 내부 mask_cond가 추가 dropout 걸지 않도록 일시 비활성화
-        orig_drop_prob = self.cond_drop_prob
-        self.cond_drop_prob = 0.0
-
-        logits1 = self.trans_forward(x_ids, cond1, ~non_pad_mask)  # (b, ntoken, seqlen)
-        logits2 = self.trans_forward(x_ids, cond2, ~non_pad_mask)
-
-        self.cond_drop_prob = orig_drop_prob
-
-        # (b, ntoken, seqlen) -> (b, seqlen, ntoken)
-        logits1 = logits1.permute(0, 2, 1)
-        logits2 = logits2.permute(0, 2, 1)
-
-        p1     = F.softmax(logits1, dim=-1)
-        p2     = F.softmax(logits2, dim=-1)
-        log_p1 = F.log_softmax(logits1, dim=-1)
-        log_p2 = F.log_softmax(logits2, dim=-1)
-
-        # w_i = 1 - (p1(GT) + p2(GT)) / 2
-        gt_idx = ids.clone()
-        gt_idx[~mask] = 0  # gather용 placeholder
-        p1_gt = p1.gather(2, gt_idx.unsqueeze(-1)).squeeze(-1)  # (b, seqlen)
-        p2_gt = p2.gather(2, gt_idx.unsqueeze(-1)).squeeze(-1)
-        w = (1. - (p1_gt + p2_gt) / 2.).detach()               # gradient 끊음
-
-        # Symmetric KL per position
-        kl_12 = F.kl_div(log_p2, p1, reduction='none').sum(dim=-1)  # (b, seqlen)
-        kl_21 = F.kl_div(log_p1, p2, reduction='none').sum(dim=-1)
-        sym_kl = (kl_12 + kl_21) * 0.5
-
-        consistency_loss = (w * sym_kl * mask.float()).sum() / mask.sum().clamp(min=1)
-        return consistency_loss
-                
+        ce_per_token = F.cross_entropy(logits, labels, ignore_index=self.mask_id, reduction='none')
+        n = cons_weight.sum().clamp(min=1)
+        return (ce_per_token * cons_weight).sum() / n
         
     def forward_with_cond_scale(self,
                                 motion_ids,

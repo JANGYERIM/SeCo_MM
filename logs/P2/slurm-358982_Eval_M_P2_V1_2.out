@@ -1,0 +1,154 @@
+------------ Options -------------
+batch_size: 32
+checkpoints_dir: ./checkpoints
+cond_scale: 4
+dataset_name: t2m
+dropout: 0.2
+ext: text2motion
+ff_size: 1024
+force_mask: False
+gpu_id: 0
+gumbel_sample: False
+is_train: False
+latent_dim: 384
+mask_edit_section: None
+max_motion_length: 196
+motion_length: 0
+n_heads: 6
+n_layers: 8
+name: M_P2_V1_2
+num_batch: 2
+repeat_times: 1
+res_name: tres_nlayer8_ld384_ff1024_rvq6ns_cdp0.2_sw
+seed: 10107
+source_motion: example_data/000612.npy
+temperature: 1.0
+text_path: 
+text_prompt: 
+time_steps: 10
+topkr: 0.9
+unit_length: 4
+use_res_model: True
+vq_name: rvq_nq1_dc512_nc512
+which_epoch: all
+-------------- End ----------------
+Reading ./checkpoints/t2m/M_P2_V1_2/opt.txt
+Reading ./checkpoints/t2m/rvq_nq6_dc512_nc512_noshare_qdp0.2/opt.txt
+Loading VQ Model rvq_nq6_dc512_nc512_noshare_qdp0.2 Completed!
+Reading ./checkpoints/t2m/tres_nlayer8_ld384_ff1024_rvq6ns_cdp0.2_sw/opt.txt
+latent_dim: 384, ff_size: 1024, nlayers: 8, nheads: 6, dropout: 0.2
+Loading CLIP...
+Loading Residual Transformer tres_nlayer8_ld384_ff1024_rvq6ns_cdp0.2_sw from epoch 440!
+Reading checkpoints/t2m/Comp_v6_KLD005/opt.txt
+Loading Evaluation Model Wrapper (Epoch 28) Completed!!
+Reading checkpoints/t2m/Comp_v6_KLD005/opt.txt
+Loading dataset t2m ...
+  0%|          | 0/4384 [00:00<?, ?it/s]  8%|▊         | 347/4384 [00:00<00:01, 3466.54it/s] 16%|█▌        | 694/4384 [00:00<00:01, 3190.49it/s] 23%|██▎       | 1015/4384 [00:00<00:01, 3105.24it/s] 30%|███       | 1327/4384 [00:00<00:01, 3017.21it/s] 37%|███▋      | 1630/4384 [00:00<00:00, 2988.62it/s] 44%|████▍     | 1930/4384 [00:00<00:00, 2980.39it/s] 51%|█████     | 2229/4384 [00:00<00:00, 2982.04it/s] 58%|█████▊    | 2528/4384 [00:00<00:00, 2973.11it/s] 64%|██████▍   | 2826/4384 [00:00<00:00, 2947.69it/s] 71%|███████   | 3121/4384 [00:01<00:00, 2686.69it/s] 78%|███████▊  | 3424/4384 [00:01<00:00, 2783.37it/s] 85%|████████▍ | 3718/4384 [00:01<00:00, 2827.75it/s] 92%|█████████▏| 4013/4384 [00:01<00:00, 2861.52it/s] 98%|█████████▊| 4312/4384 [00:01<00:00, 2896.88it/s]100%|██████████| 4384/4384 [00:01<00:00, 2930.84it/s]Pointer Pointing at 0
+Ground Truth Dataset Loading Completed!!!
+loading checkpoint net_best_acc.tar
+latent_dim: 384, ff_size: 1024, nlayers: 8, nheads: 6, dropout: 0.2
+Loading CLIP...
+Loading Mask Transformer M_P2_V1_2 from epoch 77!
+
+--> 	 Eva. Repeat 0 :, FID. 0.1349, Diversity Real. 9.2640, Diversity. 9.3806, R_precision_real. [0.51196809 0.70656028 0.79765071], R_precision. [0.49889184 0.69348404 0.7918883 ], matching_score_real. 2.9864, matching_score_pred. 3.0891,multimodality. 1.4914
+/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:935: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
+/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:941: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  pred_ids = res_model.generate(mids, clip_text, m_length // 4, temperature=1, cond_scale=res_cond_scale)
+/nas2/data/dpfla3573/code/MM_SeCo/models/t2m_eval_wrapper.py:73: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  m_lens = m_lens // self.opt.unit_length
+/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:957: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
+/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:963: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  pred_ids = res_model.generate(mids, clip_text, m_length // 4, temperature=1, cond_scale=res_cond_scale)
+--> 	 Eva. Repeat 1 :, FID. 0.1402, Diversity Real. 9.6904, Diversity. 9.6421, R_precision_real. [0.51085993 0.70190603 0.79011525], R_precision. [0.49202128 0.68262411 0.77969858], matching_score_real. 2.9865, matching_score_pred. 3.1360,multimodality. 1.6000
+--> 	 Eva. Repeat 2 :, FID. 0.1465, Diversity Real. 9.3276, Diversity. 9.3503, R_precision_real. [0.50531915 0.69791667 0.79011525], R_precision. [0.48980496 0.68195922 0.78080674], matching_score_real. 2.9960, matching_score_pred. 3.1200,multimodality. 1.4600
+--> 	 Eva. Repeat 3 :, FID. 0.1694, Diversity Real. 9.4155, Diversity. 9.5686, R_precision_real. [0.50531915 0.70013298 0.80075355], R_precision. [0.49135638 0.68594858 0.7847961 ], matching_score_real. 2.9545, matching_score_pred. 3.1464,multimodality. 1.5707
+--> 	 Eva. Repeat 4 :, FID. 0.1450, Diversity Real. 9.2919, Diversity. 9.6384, R_precision_real. [0.51130319 0.70500887 0.79853723], R_precision. [0.49711879 0.68572695 0.78723404], matching_score_real. 2.9951, matching_score_pred. 3.1130,multimodality. 1.4802
+--> 	 Eva. Repeat 5 :, FID. 0.1741, Diversity Real. 9.4080, Diversity. 9.7653, R_precision_real. [0.5177305  0.71210106 0.79942376], R_precision. [0.49091312 0.68860816 0.78679078], matching_score_real. 2.9703, matching_score_pred. 3.1369,multimodality. 1.5906
+--> 	 Eva. Repeat 6 :, FID. 0.1381, Diversity Real. 9.4103, Diversity. 9.3494, R_precision_real. [0.51152482 0.69680851 0.79609929], R_precision. [0.49312943 0.68461879 0.78324468], matching_score_real. 2.9785, matching_score_pred. 3.1097,multimodality. 1.4577
+--> 	 Eva. Repeat 7 :, FID. 0.1608, Diversity Real. 9.4546, Diversity. 9.6409, R_precision_real. [0.50664894 0.68838652 0.78634752], R_precision. [0.4758422  0.66954787 0.76972518], matching_score_real. 2.9827, matching_score_pred. 3.1591,multimodality. 1.4700
+--> 	 Eva. Repeat 8 :, FID. 0.1650, Diversity Real. 9.1425, Diversity. 9.5108, R_precision_real. [0.51196809 0.70257092 0.79255319], R_precision. [0.49024823 0.6775266  0.78147163], matching_score_real. 2.9936, matching_score_pred. 3.1338,multimodality. 1.3653
+--> 	 Eva. Repeat 9 :, FID. 0.1574, Diversity Real. 9.3097, Diversity. 9.3954, R_precision_real. [0.51396277 0.70345745 0.8025266 ], R_precision. [0.49468085 0.68351064 0.77925532], matching_score_real. 2.9865, matching_score_pred. 3.1326,multimodality. 1.6462
+--> 	 Eva. Repeat 10 :, FID. 0.1706, Diversity Real. 9.6239, Diversity. 9.4988, R_precision_real. [0.50620567 0.70434397 0.80208333], R_precision. [0.49091312 0.68993794 0.79011525], matching_score_real. 2.9874, matching_score_pred. 3.1319,multimodality. 1.3350
+--> 	 Eva. Repeat 11 :, FID. 0.1683, Diversity Real. 9.6250, Diversity. 9.9007, R_precision_real. [0.50310284 0.69902482 0.79055851], R_precision. [0.48093972 0.67132092 0.78257979], matching_score_real. 2.9958, matching_score_pred. 3.1523,multimodality. 1.6246
+--> 	 Eva. Repeat 12 :, FID. 0.1599, Diversity Real. 9.4442, Diversity. 9.5394, R_precision_real. [0.51573582 0.70434397 0.79875887], R_precision. [0.49844858 0.69193262 0.78346631], matching_score_real. 2.9571, matching_score_pred. 3.1218,multimodality. 1.5880
+--> 	 Eva. Repeat 13 :, FID. 0.1621, Diversity Real. 9.3719, Diversity. 9.4676, R_precision_real. [0.50620567 0.69237589 0.79078014], R_precision. [0.48958333 0.68439716 0.78280142], matching_score_real. 3.0084, matching_score_pred. 3.1471,multimodality. 1.5324
+--> 	 Eva. Repeat 14 :, FID. 0.1578, Diversity Real. 9.1427, Diversity. 9.4364, R_precision_real. [0.51241135 0.69991135 0.79255319], R_precision. [0.4929078  0.68550532 0.78169326], matching_score_real. 2.9925, matching_score_pred. 3.1189,multimodality. 1.4484
+--> 	 Eva. Repeat 15 :, FID. 0.1682, Diversity Real. 9.7393, Diversity. 9.3206, R_precision_real. [0.52194149 0.70190603 0.79321809], R_precision. [0.50687057 0.6981383  0.7947695 ], matching_score_real. 2.9866, matching_score_pred. 3.1132,multimodality. 1.5766
+--> 	 Eva. Repeat 16 :, FID. 0.1567, Diversity Real. 9.2573, Diversity. 9.6816, R_precision_real. [0.5141844  0.71077128 0.79698582], R_precision. [0.47828014 0.67353723 0.77504433], matching_score_real. 2.9699, matching_score_pred. 3.1778,multimodality. 1.5256
+--> 	 Eva. Repeat 17 :, FID. 0.1534, Diversity Real. 9.5495, Diversity. 9.7988, R_precision_real. [0.5106383  0.69370567 0.78856383], R_precision. [0.48071809 0.67420213 0.77304965], matching_score_real. 2.9934, matching_score_pred. 3.1511,multimodality. 1.5072
+--> 	 Eva. Repeat 18 :, FID. 0.1375, Diversity Real. 9.5290, Diversity. 9.2898, R_precision_real. [0.51462766 0.69858156 0.79499113], R_precision. [0.49512411 0.68284574 0.78324468], matching_score_real. 3.0010, matching_score_pred. 3.1127,multimodality. 1.4140
+--> 	 Eva. Repeat 19 :, FID. 0.1447, Diversity Real. 9.8025, Diversity. 9.6732, R_precision_real. [0.50886525 0.69481383 0.7883422 ], R_precision. [0.49157801 0.68484043 0.78036348], matching_score_real. 2.9950, matching_score_pred. 3.1290,multimodality. 1.5222
+net_best_acc.tar final result:
+	FID: 0.156, conf. 0.005
+	Diversity: 9.542, conf. 0.074
+	TOP1: 0.491, conf. 0.003, TOP2. 0.684, conf. 0.003, TOP3. 0.783, conf. 0.003
+	Matching: 3.132, conf. 0.009
+	Multimodality:1.510, conf.0.036
+
+
+loading checkpoint latest.tar
+latent_dim: 384, ff_size: 1024, nlayers: 8, nheads: 6, dropout: 0.2
+Loading CLIP...
+Loading Mask Transformer M_P2_V1_2 from epoch 499!
+--> 	 Eva. Repeat 0 :, FID. 0.0424, Diversity Real. 9.6964, Diversity. 9.4901, R_precision_real. [0.52703901 0.71453901 0.8018617 ], R_precision. [0.4964539  0.68528369 0.78501773], matching_score_real. 2.9709, matching_score_pred. 3.0705,multimodality. 1.1948
+--> 	 Eva. Repeat 1 :, FID. 0.0471, Diversity Real. 9.7078, Diversity. 9.8823, R_precision_real. [0.51174645 0.69835993 0.78324468], R_precision. [0.5064273  0.69437057 0.78701241], matching_score_real. 2.9754, matching_score_pred. 3.0571,multimodality. 1.3213
+--> 	 Eva. Repeat 2 :, FID. 0.0427, Diversity Real. 9.3040, Diversity. 9.4501, R_precision_real. [0.50509752 0.70057624 0.79853723], R_precision. [0.50243794 0.68905142 0.79299645], matching_score_real. 2.9709, matching_score_pred. 3.0527,multimodality. 1.2774
+--> 	 Eva. Repeat 3 :, FID. 0.0427, Diversity Real. 9.2058, Diversity. 9.3333, R_precision_real. [0.51883865 0.70500887 0.80008865], R_precision. [0.5099734  0.69769504 0.79809397], matching_score_real. 2.9819, matching_score_pred. 3.0477,multimodality. 1.2243
+--> 	 Eva. Repeat 4 :, FID. 0.0450, Diversity Real. 9.3346, Diversity. 9.2565, R_precision_real. [0.50132979 0.69281915 0.78812057], R_precision. [0.51130319 0.7045656  0.79986702], matching_score_real. 3.0190, matching_score_pred. 3.0025,multimodality. 1.2058
+--> 	 Eva. Repeat 5 :, FID. 0.0443, Diversity Real. 9.6596, Diversity. 9.5930, R_precision_real. [0.50908688 0.69570035 0.7883422 ], R_precision. [0.50421099 0.69968972 0.79410461], matching_score_real. 3.0135, matching_score_pred. 3.0660,multimodality. 1.2077
+--> 	 Eva. Repeat 6 :, FID. 0.0390, Diversity Real. 9.3966, Diversity. 9.5380, R_precision_real. [0.51218972 0.70744681 0.80164007], R_precision. [0.50310284 0.69348404 0.78945035], matching_score_real. 2.9636, matching_score_pred. 3.0372,multimodality. 1.2690
+--> 	 Eva. Repeat 7 :, FID. 0.0453, Diversity Real. 9.3910, Diversity. 9.0722, R_precision_real. [0.51285461 0.69791667 0.78457447], R_precision. [0.49490248 0.68218085 0.78302305], matching_score_real. 3.0107, matching_score_pred. 3.0987,multimodality. 1.3962
+--> 	 Eva. Repeat 8 :, FID. 0.0384, Diversity Real. 9.7360, Diversity. 9.1641, R_precision_real. [0.50265957 0.70279255 0.79366135], R_precision. [0.5106383  0.69835993 0.79410461], matching_score_real. 3.0006, matching_score_pred. 3.0382,multimodality. 1.2769
+--> 	 Eva. Repeat 9 :, FID. 0.0422, Diversity Real. 9.3240, Diversity. 9.5177, R_precision_real. [0.50576241 0.7052305  0.7947695 ], R_precision. [0.50376773 0.69835993 0.79055851], matching_score_real. 2.9810, matching_score_pred. 3.0747,multimodality. 1.2592
+--> 	 Eva. Repeat 10 :, FID. 0.0495, Diversity Real. 9.6488, Diversity. 9.1006, R_precision_real. [0.52504433 0.70500887 0.79920213], R_precision. [0.5170656  0.70390071 0.79321809], matching_score_real. 2.9739, matching_score_pred. 3.0672,multimodality. 1.0677
+--> 	 Eva. Repeat 11 :, FID. 0.0403, Diversity Real. 9.3774, Diversity. 8.9782, R_precision_real. [0.51108156 0.7010195  0.78701241], R_precision. [0.50487589 0.70146277 0.7912234 ], matching_score_real. 2.9892, matching_score_pred. 3.0461,multimodality. 1.2787
+--> 	 Eva. Repeat 12 :, FID. 0.0468, Diversity Real. 9.6472, Diversity. 9.6480, R_precision_real. [0.51972518 0.71077128 0.8018617 ], R_precision. [0.50022163 0.69924645 0.7989805 ], matching_score_real. 2.9480, matching_score_pred. 3.0466,multimodality. 1.3089
+--> 	 Eva. Repeat 13 :, FID. 0.0415, Diversity Real. 9.4841, Diversity. 9.2123, R_precision_real. [0.52105496 0.70234929 0.79609929], R_precision. [0.50620567 0.69791667 0.79321809], matching_score_real. 2.9683, matching_score_pred. 3.0468,multimodality. 1.3780
+--> 	 Eva. Repeat 14 :, FID. 0.0426, Diversity Real. 9.4766, Diversity. 9.3238, R_precision_real. [0.51950355 0.7052305  0.80407801], R_precision. [0.51130319 0.7052305  0.8054078 ], matching_score_real. 2.9956, matching_score_pred. 3.0189,multimodality. 1.1789
+--> 	 Eva. Repeat 15 :, FID. 0.0405, Diversity Real. 9.5679, Diversity. 9.3297, R_precision_real. [0.51595745 0.70257092 0.79875887], R_precision. [0.51374113 0.69991135 0.79942376], matching_score_real. 2.9757, matching_score_pred. 3.0457,multimodality. 1.3497
+--> 	 Eva. Repeat 16 :, FID. 0.0429, Diversity Real. 9.2595, Diversity. 9.3805, R_precision_real. [0.51484929 0.71010638 0.79964539], R_precision. [0.5064273  0.70656028 0.80141844], matching_score_real. 2.9870, matching_score_pred. 3.0251,multimodality. 1.2456
+--> 	 Eva. Repeat 17 :, FID. 0.0357, Diversity Real. 9.4971, Diversity. 9.3210, R_precision_real. [0.50864362 0.70035461 0.80429965], R_precision. [0.50731383 0.69658688 0.79255319], matching_score_real. 2.9965, matching_score_pred. 3.0534,multimodality. 1.3691
+--> 	 Eva. Repeat 18 :, FID. 0.0556, Diversity Real. 9.8180, Diversity. 9.4217, R_precision_real. [0.52437943 0.70833333 0.80119681], R_precision. [0.50731383 0.70323582 0.78878546], matching_score_real. 2.9928, matching_score_pred. 3.0613,multimodality. 1.2577
+--> 	 Eva. Repeat 19 :, FID. 0.0445, Diversity Real. 9.5508, Diversity. 9.2380, R_precision_real. [0.5170656  0.70855496 0.79654255], R_precision. [0.51174645 0.69769504 0.79011525], matching_score_real. 2.9582, matching_score_pred. 3.0406,multimodality. 1.4033
+latest.tar final result:
+	FID: 0.043, conf. 0.002
+	Diversity: 9.363, conf. 0.092
+	TOP1: 0.506, conf. 0.002, TOP2. 0.698, conf. 0.003, TOP3. 0.793, conf. 0.002
+	Matching: 3.050, conf. 0.009
+	Multimodality:1.274, conf.0.036
+
+
+loading checkpoint net_best_fid.tar
+latent_dim: 384, ff_size: 1024, nlayers: 8, nheads: 6, dropout: 0.2
+Loading CLIP...
+Loading Mask Transformer M_P2_V1_2 from epoch 335!
+--> 	 Eva. Repeat 0 :, FID. 0.0411, Diversity Real. 9.3505, Diversity. 9.5149, R_precision_real. [0.50864362 0.70057624 0.7989805 ], R_precision. [0.51263298 0.7081117  0.79853723], matching_score_real. 2.9911, matching_score_pred. 3.0427,multimodality. 1.4650
+--> 	 Eva. Repeat 1 :, FID. 0.0483, Diversity Real. 9.4892, Diversity. 9.4254, R_precision_real. [0.51041667 0.7116578  0.79720745], R_precision. [0.50088652 0.69835993 0.7989805 ], matching_score_real. 2.9697, matching_score_pred. 3.0358,multimodality. 1.3555
+--> 	 Eva. Repeat 2 :, FID. 0.0468, Diversity Real. 9.5208, Diversity. 9.5955, R_precision_real. [0.51750887 0.70678191 0.79875887], R_precision. [0.51019504 0.69614362 0.79742908], matching_score_real. 2.9808, matching_score_pred. 3.0425,multimodality. 1.3420
+--> 	 Eva. Repeat 3 :, FID. 0.0459, Diversity Real. 9.6177, Diversity. 9.5577, R_precision_real. [0.50465426 0.69991135 0.79609929], R_precision. [0.50864362 0.69481383 0.78967199], matching_score_real. 2.9824, matching_score_pred. 3.0504,multimodality. 1.2847
+--> 	 Eva. Repeat 4 :, FID. 0.0437, Diversity Real. 9.2057, Diversity. 9.4206, R_precision_real. [0.50132979 0.70013298 0.79321809], R_precision. [0.49202128 0.69614362 0.79078014], matching_score_real. 2.9818, matching_score_pred. 3.0263,multimodality. 1.1732
+--> 	 Eva. Repeat 5 :, FID. 0.0449, Diversity Real. 9.5734, Diversity. 9.6118, R_precision_real. [0.49534574 0.69193262 0.79321809], R_precision. [0.49867021 0.69968972 0.79809397], matching_score_real. 2.9946, matching_score_pred. 3.0152,multimodality. 1.3544
+--> 	 Eva. Repeat 6 :, FID. 0.0410, Diversity Real. 9.4358, Diversity. 9.3623, R_precision_real. [0.51019504 0.69658688 0.78812057], R_precision. [0.50975177 0.6981383  0.78501773], matching_score_real. 2.9964, matching_score_pred. 3.0649,multimodality. 1.3391
+--> 	 Eva. Repeat 7 :, FID. 0.0486, Diversity Real. 9.4997, Diversity. 9.2774, R_precision_real. [0.50953014 0.70766844 0.80031028], R_precision. [0.50908688 0.71143617 0.8025266 ], matching_score_real. 2.9585, matching_score_pred. 3.0309,multimodality. 1.2875
+--> 	 Eva. Repeat 8 :, FID. 0.0523, Diversity Real. 9.6165, Diversity. 9.3364, R_precision_real. [0.50110816 0.70678191 0.80274823], R_precision. [0.5        0.68506206 0.7876773 ], matching_score_real. 2.9517, matching_score_pred. 3.0238,multimodality. 1.3752
+--> 	 Eva. Repeat 9 :, FID. 0.0483, Diversity Real. 9.9238, Diversity. 9.5777, R_precision_real. [0.51218972 0.6910461  0.78413121], R_precision. [0.51440603 0.6974734  0.79720745], matching_score_real. 2.9969, matching_score_pred. 3.0216,multimodality. 1.4229
+--> 	 Eva. Repeat 10 :, FID. 0.0327, Diversity Real. 9.2025, Diversity. 9.3831, R_precision_real. [0.49933511 0.7016844  0.8025266 ], R_precision. [0.51241135 0.69946809 0.79410461], matching_score_real. 2.9664, matching_score_pred. 3.0243,multimodality. 1.4224
+--> 	 Eva. Repeat 11 :, FID. 0.0463, Diversity Real. 9.7661, Diversity. 9.1297, R_precision_real. [0.51108156 0.69680851 0.78989362], R_precision. [0.50110816 0.69791667 0.79609929], matching_score_real. 3.0040, matching_score_pred. 3.0473,multimodality. 1.3195
+--> 	 Eva. Repeat 12 :, FID. 0.0550, Diversity Real. 9.4045, Diversity. 9.4991, R_precision_real. [0.50576241 0.69968972 0.79521277], R_precision. [0.50044326 0.69082447 0.78568262], matching_score_real. 2.9719, matching_score_pred. 3.0689,multimodality. 1.3489
+--> 	 Eva. Repeat 13 :, FID. 0.0392, Diversity Real. 9.7872, Diversity. 9.3638, R_precision_real. [0.51817376 0.70323582 0.79676418], R_precision. [0.51529255 0.7052305  0.7989805 ], matching_score_real. 2.9922, matching_score_pred. 2.9950,multimodality. 1.3397
+--> 	 Eva. Repeat 14 :, FID. 0.0423, Diversity Real. 9.4107, Diversity. 9.6865, R_precision_real. [0.51019504 0.69991135 0.79100177], R_precision. [0.51617908 0.69880319 0.79565603], matching_score_real. 2.9768, matching_score_pred. 3.0274,multimodality. 1.3369
+--> 	 Eva. Repeat 15 :, FID. 0.0338, Diversity Real. 9.5700, Diversity. 9.4160, R_precision_real. [0.5        0.69880319 0.79343972], R_precision. [0.50576241 0.70234929 0.80230496], matching_score_real. 2.9946, matching_score_pred. 3.0262,multimodality. 1.3023
+--> 	 Eva. Repeat 16 :, FID. 0.0375, Diversity Real. 9.5615, Diversity. 9.3030, R_precision_real. [0.50775709 0.69880319 0.78656915], R_precision. [0.51218972 0.69437057 0.78612589], matching_score_real. 3.0181, matching_score_pred. 3.0601,multimodality. 1.2610
+--> 	 Eva. Repeat 17 :, FID. 0.0454, Diversity Real. 9.6739, Diversity. 9.3843, R_precision_real. [0.51196809 0.7010195  0.79676418], R_precision. [0.51750887 0.70301418 0.7947695 ], matching_score_real. 2.9731, matching_score_pred. 3.0363,multimodality. 1.4719
+--> 	 Eva. Repeat 18 :, FID. 0.0396, Diversity Real. 9.5603, Diversity. 9.3943, R_precision_real. [0.4929078  0.6981383  0.78789894], R_precision. [0.50554078 0.69880319 0.80164007], matching_score_real. 3.0010, matching_score_pred. 3.0160,multimodality. 1.2758
+--> 	 Eva. Repeat 19 :, FID. 0.0370, Diversity Real. 9.4088, Diversity. 9.3652, R_precision_real. [0.51440603 0.6981383  0.79676418], R_precision. [0.49689716 0.69348404 0.79654255], matching_score_real. 2.9827, matching_score_pred. 3.0402,multimodality. 1.3080
+net_best_fid.tar final result:
+	FID: 0.043, conf. 0.002
+	Diversity: 9.430, conf. 0.057
+	TOP1: 0.507, conf. 0.003, TOP2. 0.698, conf. 0.002, TOP3. 0.795, conf. 0.002
+	Matching: 3.035, conf. 0.008
+	Multimodality:1.339, conf.0.030
+
+

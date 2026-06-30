@@ -13,6 +13,87 @@ COLORS = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0]
           [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
 
 
+def plot_3d_motion_multi(save_path, kinematic_chain, joints_list, fps=20, radius=4):
+    """Render N motions side by side (no text overlay). joints_list: list of (T, J, 3) arrays."""
+    matplotlib.use('Agg')
+    n = len(joints_list)
+
+    colors = ['red', 'blue', 'black', 'red', 'blue',
+              'darkblue', 'darkblue', 'darkblue', 'darkblue', 'darkblue',
+              'darkred', 'darkred', 'darkred', 'darkred', 'darkred']
+
+    motions_data, motions_traj, motions_min, motions_max = [], [], [], []
+    max_frames = 0
+    for joints in joints_list:
+        data = joints.copy().reshape(len(joints), -1, 3)
+        max_frames = max(max_frames, data.shape[0])
+        MINS = data.min(axis=0).min(axis=0)
+        MAXS = data.max(axis=0).max(axis=0)
+        motions_min.append(MINS)
+        motions_max.append(MAXS)
+        data[:, :, 1] -= MINS[1]
+        trajec = data[:, 0, [0, 2]]
+        motions_traj.append(trajec)
+        data[..., 0] -= data[:, 0:1, 0]
+        data[..., 2] -= data[:, 0:1, 2]
+        motions_data.append(data)
+
+    fig = plt.figure(figsize=(10 * n, 10))
+    axs = [fig.add_subplot(1, n, i + 1, projection='3d') for i in range(n)]
+
+    def init():
+        for ax in axs:
+            ax.set_xlim3d([-radius / 2, radius / 2])
+            ax.set_ylim3d([0, radius])
+            ax.set_zlim3d([0, radius])
+            ax.grid(b=False)
+
+    def plot_xzPlane(ax, minx, maxx, miny, minz, maxz):
+        verts = [[minx, miny, minz], [minx, miny, maxz], [maxx, miny, maxz], [maxx, miny, minz]]
+        xz_plane = Poly3DCollection([verts])
+        xz_plane.set_facecolor((0.5, 0.5, 0.5, 0.5))
+        ax.add_collection3d(xz_plane)
+
+    def update(index):
+        for i, ax in enumerate(axs):
+            ax.lines = []
+            ax.collections = []
+            ax.view_init(elev=120, azim=-90)
+            ax.dist = 7.5
+
+            data = motions_data[i]
+            trajec = motions_traj[i]
+            MINS = motions_min[i]
+            MAXS = motions_max[i]
+            idx = min(index, len(data) - 1)
+
+            plot_xzPlane(ax,
+                         MINS[0] - trajec[idx, 0], MAXS[0] - trajec[idx, 0],
+                         0,
+                         MINS[2] - trajec[idx, 1], MAXS[2] - trajec[idx, 1])
+
+            if idx > 1:
+                ax.plot3D(trajec[:idx, 0] - trajec[idx, 0],
+                          np.zeros_like(trajec[:idx, 0]),
+                          trajec[:idx, 1] - trajec[idx, 1],
+                          linewidth=1.0, color='blue')
+
+            for j, (chain, color) in enumerate(zip(kinematic_chain, colors)):
+                linewidth = 4.0 if j < 5 else 2.0
+                ax.plot3D(data[idx, chain, 0], data[idx, chain, 1], data[idx, chain, 2],
+                          linewidth=linewidth, color=color)
+
+            ax.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_zticklabels([])
+
+    init()
+    ani = FuncAnimation(fig, update, frames=max_frames, interval=1000 / fps, repeat=False)
+    ani.save(save_path, fps=fps)
+    plt.close()
+
+
 def plot_2d_pose(pose, pose_tree, class_type, save_path=None, excluded_joints=None):
     def init():
         plt.xlabel('x')

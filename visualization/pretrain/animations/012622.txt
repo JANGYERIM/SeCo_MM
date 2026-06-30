@@ -1,0 +1,3 @@
+caption1: a person walking in a diagonal line.
+caption2: he pushes recovery on left arm
+caption3: a person who is standing with his arms by his sides takes one step forward, starts walking towards his right, then takes two steps to his left and stops.

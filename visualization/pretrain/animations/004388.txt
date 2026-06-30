@@ -1,0 +1,3 @@
+caption1: a man takes a step forward, takes his left arm and moves it right to left then takes a step back.
+caption2: a person slides an object from their right to left.
+caption3: a person steps forward, reaches forward with their left arm and moves hand from right to left, then steps backwards.

@@ -1,0 +1,3 @@
+caption1: a person starts with their arms at waist height then moves slightly left and right.
+caption2: a person raised a little hand
+caption3: a person appears to be balancing on something

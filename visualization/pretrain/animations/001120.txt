@@ -1,0 +1,2 @@
+caption1: person walks forward in straight line 4 steps and then stops.
+caption2: a person takes a few steps forwards before stopping.

@@ -1,0 +1,3 @@
+caption1: a person plays the guitar, strumming with their left hand.
+caption2: a person raises his right hand to shoulder height and raises his left hand and impersonates strumming a guitar
+caption3: person is playing the guitar

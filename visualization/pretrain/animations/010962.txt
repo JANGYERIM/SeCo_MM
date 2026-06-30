@@ -1,0 +1,3 @@
+caption1: a person rubs their hands together.
+caption2: a person claps rolls with their hands while sitting.
+caption3: the man is moving his legs

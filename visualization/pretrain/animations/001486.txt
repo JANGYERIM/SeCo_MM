@@ -1,0 +1,2 @@
+caption1: the person is picking up something.
+caption2: using both hands, a person bends over to pat the ground.

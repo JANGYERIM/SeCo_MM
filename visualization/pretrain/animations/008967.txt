@@ -1,0 +1,2 @@
+caption1: the person is playing dodgeball.
+caption2: a person who seems to be dodging things

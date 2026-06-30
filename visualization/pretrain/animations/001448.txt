@@ -1,0 +1,3 @@
+caption1: the figure steps forward then turns slightly right and proceeds to walk in that direction.
+caption2: a person walks in a right bend direction.
+caption3: a person walks toward a right-branch in a smooth curve and stops while both arms swing very slightly.

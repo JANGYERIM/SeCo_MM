@@ -12,6 +12,13 @@ def collate_fn(batch):
     batch.sort(key=lambda x: x[3], reverse=True)
     return default_collate(batch)
 
+def collate_fn_multi_caption(batch):
+    batch.sort(key=lambda x: x[2], reverse=True)
+    captions_list = [item[0] for item in batch]
+    motions = default_collate([item[1] for item in batch])
+    m_lens = default_collate([item[2] for item in batch])
+    return captions_list, motions, m_lens
+
 class MotionDataset(data.Dataset):
     def __init__(self, opt, mean, std, split_file):
         self.opt = opt
@@ -315,13 +322,8 @@ class Text2MotionDataset(data.Dataset):
         idx = self.pointer + item
         data = self.data_dict[self.name_list[idx]]
         motion, m_length, text_list = data['motion'], data['length'], data['text']
-        # Randomly select two captions
-        if len(text_list) >=2:
-            text_data1,text_data2 = random.sample(text_list, 2)
-        else:
-            text_data1 = text_data2 = text_list[0]
-        caption, tokens = text_data1['caption'], text_data1['tokens']
-        caption2 = text_data2['caption']
+
+        captions = [td['caption'] for td in text_list]
 
         if self.opt.unit_length < 10:
             coin2 = np.random.choice(['single', 'single', 'double'])
@@ -342,9 +344,7 @@ class Text2MotionDataset(data.Dataset):
             motion = np.concatenate([motion,
                                      np.zeros((self.max_motion_length - m_length, motion.shape[1]))
                                      ], axis=0)
-        # print(word_embeddings.shape, motion.shape)
-        # print(tokens)
-        return caption, caption2, motion, m_length
+        return captions, motion, m_length
 
     def reset_min_len(self, length):
         assert length <= self.max_motion_length
