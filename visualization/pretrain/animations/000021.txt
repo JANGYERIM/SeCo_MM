@@ -1,3 +1,0 @@
-caption1: person is walking normally in a circle
-caption2: a person takes eight steps forming a complete circle
-caption3: a person walks in a counterclockwise circle.

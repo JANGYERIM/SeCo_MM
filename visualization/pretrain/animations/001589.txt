@@ -1,3 +1,0 @@
-caption1: a person runs on the spot.
-caption2: a person jogs in place for a few seconds and then stops.
-caption3: a person is running in place.

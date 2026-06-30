@@ -1,3 +1,0 @@
-caption1: a person walks towards the camera.
-caption2: a person walks several steps forward in a straight line.
-caption3: the person takes 4 steps forward starting with his right foot.

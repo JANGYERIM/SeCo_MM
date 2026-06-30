@@ -1,3 +1,0 @@
-caption1: the person was pushed but did not fall.
-caption2: a person walks forward and then shuffles quickly to the right and then walks diagonally forward.
-caption3: a person takes two steps forward, then walks sideways three steps, then walks forward diagonally and to the left three steps.

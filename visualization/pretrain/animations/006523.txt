@@ -1,3 +1,0 @@
-caption1: a person runs forward in a non-linear way.
-caption2: person is running from side to side
-caption3: the person is running sideways.

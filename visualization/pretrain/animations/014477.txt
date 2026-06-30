@@ -1,3 +1,0 @@
-caption1: a person crosses their arms.
-caption2: a person crosses their arms
-caption3: a person crosses their arms then uncrosses them

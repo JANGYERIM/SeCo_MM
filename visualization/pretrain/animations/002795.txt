@@ -1,3 +1,0 @@
-caption1: a person jogging in place.
-caption2: a person jogs in place.
-caption3: a person jogs on the same spot.

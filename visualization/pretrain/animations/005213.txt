@@ -1,3 +1,0 @@
-caption1: a person walks away diagonally to his right, picks something up, walks back, and then he again walks diagonally to his right and picks something up.
-caption2: a person walks around and stops.
-caption3: the person is pacing in a diagonal motion.

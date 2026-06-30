@@ -1,4 +1,15 @@
 *.pyc
-checkpoints
-editing
-generation
+checkpoints/
+editing/
+generation/
+
+# logs & tensorboard events
+log/
+logs/
+
+# visualization outputs
+visualization/data/
+visualization/pretrain/
+
+# slurm outputs
+*.out

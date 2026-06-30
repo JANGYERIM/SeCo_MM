@@ -1,3 +1,0 @@
-caption1: a person turns around and walks forward to the other end while leaning a bit from side to side and then turns around again.
-caption2: a man stands on the ground, turns half way around counter-clockwise walks away 8 steps and turns back around.
-caption3: a person turns counter clockwise and walks backward, then turns clockwise and stops.

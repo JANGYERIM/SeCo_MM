@@ -1,3 +1,0 @@
-caption1: someone jumps around, takes four steps and turns back
-caption2: a person jumps in the air, spinning in a complete circle, walks forward, then walks backwards.
-caption3: the man spins around then walks forward then back

@@ -1,3 +1,0 @@
-caption1: a person walks in a clockwise circle.
-caption2: a person walks in a clockwise circle.
-caption3: the figure walks in a clockwise circle, stopping at their starting point.

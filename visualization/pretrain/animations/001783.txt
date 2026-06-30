@@ -1,3 +1,0 @@
-caption1: person slides forward diagonally with right leg.
-caption2: a person takes a step to the right.
-caption3: a person makes a step to the right.

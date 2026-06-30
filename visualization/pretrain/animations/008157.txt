@@ -1,3 +1,0 @@
-caption1: a person turns to their left while leaping forward.
-caption2: the person jumps forward and turns to his left.
-caption3: a person jumps forwards and turns left in mid air.

@@ -1,3 +1,0 @@
-caption1: man jumps twice in place
-caption2: a person hops in place twice.
-caption3: someone jumping up and down lightly.

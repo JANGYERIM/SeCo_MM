@@ -1,3 +1,0 @@
-caption1: a person, walked forward by changing direcion into left and right
-caption2: a man walks slowly forwards, stepping widely to the left and right.
-caption3: this person stumbles left and right while moving forward.

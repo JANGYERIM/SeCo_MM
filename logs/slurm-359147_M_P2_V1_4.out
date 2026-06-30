@@ -1,446 +1,0 @@
------------- Options -------------
-batch_size: 64
-checkpoints_dir: ./checkpoints
-cond_drop_prob: 0.1
-consistency_type: argmax
-dataset_name: t2m
-dropout: 0.2
-eval_every_e: 10
-ff_size: 1024
-force_mask: False
-gamma: 0.1
-gpu_id: 0
-gumbel_sample: False
-is_continue: False
-is_train: True
-lambda_consistency: 1.0
-latent_dim: 384
-log_every: 50
-lr: 0.0002
-max_epoch: 500
-max_motion_length: 196
-milestones: [50000]
-n_heads: 6
-n_layers: 8
-name: M_P2_V1_4
-save_latest: 500
-seed: 3407
-share_weight: False
-unit_length: 4
-vq_name: rvq_nq6_dc512_nc512_noshare_qdp0.2
-warm_up_iter: 2000
--------------- End ----------------
-Reading ./checkpoints/t2m/rvq_nq6_dc512_nc512_noshare_qdp0.2/opt.txt
-Loading VQ Model rvq_nq6_dc512_nc512_noshare_qdp0.2
-latent_dim: 384, ff_size: 1024, nlayers: 8, nheads: 6, dropout: 0.2
-Loading CLIP...
-Total parameters of all models: 12.05M
-  0%|          | 0/23384 [00:00<?, ?it/s]  1%|▏         | 330/23384 [00:00<00:06, 3293.73it/s]  3%|▎         | 660/23384 [00:00<00:07, 3230.90it/s]  4%|▍         | 990/23384 [00:00<00:06, 3258.11it/s]  6%|▌         | 1322/23384 [00:00<00:06, 3279.47it/s]  7%|▋         | 1651/23384 [00:00<00:06, 3272.78it/s]  8%|▊         | 1984/23384 [00:00<00:06, 3290.01it/s] 10%|▉         | 2314/23384 [00:00<00:06, 3263.49it/s] 11%|█▏        | 2650/23384 [00:00<00:06, 3293.68it/s] 13%|█▎        | 2980/23384 [00:00<00:06, 3292.32it/s] 14%|█▍        | 3310/23384 [00:01<00:06, 3203.70it/s] 16%|█▌        | 3631/23384 [00:01<00:06, 3044.68it/s] 17%|█▋        | 3938/23384 [00:01<00:06, 3002.56it/s] 18%|█▊        | 4240/23384 [00:01<00:06, 2976.40it/s] 19%|█▉        | 4539/23384 [00:01<00:06, 2932.82it/s] 21%|██        | 4833/23384 [00:01<00:06, 2917.10it/s] 22%|██▏       | 5126/23384 [00:01<00:06, 2910.26it/s] 23%|██▎       | 5418/23384 [00:01<00:07, 2400.45it/s] 24%|██▍       | 5705/23384 [00:01<00:07, 2519.99it/s] 26%|██▌       | 5994/23384 [00:02<00:06, 2617.74it/s] 27%|██▋       | 6281/23384 [00:02<00:06, 2686.38it/s] 28%|██▊       | 6569/23384 [00:02<00:06, 2738.48it/s] 29%|██▉       | 6865/23384 [00:02<00:05, 2801.22it/s] 31%|███       | 7150/23384 [00:02<00:05, 2798.15it/s] 32%|███▏      | 7439/23384 [00:02<00:05, 2823.47it/s] 33%|███▎      | 7725/23384 [00:02<00:05, 2832.61it/s] 34%|███▍      | 8024/23384 [00:02<00:05, 2876.88it/s] 36%|███▌      | 8313/23384 [00:02<00:05, 2857.34it/s] 37%|███▋      | 8609/23384 [00:02<00:05, 2887.66it/s] 38%|███▊      | 8906/23384 [00:03<00:04, 2909.19it/s] 39%|███▉      | 9198/23384 [00:03<00:04, 2903.65it/s] 41%|████      | 9489/23384 [00:03<00:04, 2888.97it/s] 42%|████▏     | 9779/23384 [00:03<00:04, 2872.86it/s] 43%|████▎     | 10072/23384 [00:03<00:04, 2888.71it/s] 44%|████▍     | 10363/23384 [00:03<00:04, 2892.45it/s] 46%|████▌     | 10659/23384 [00:03<00:04, 2911.21it/s] 47%|████▋     | 10951/23384 [00:03<00:04, 2882.67it/s] 48%|████▊     | 11240/23384 [00:03<00:04, 2867.89it/s] 49%|████▉     | 11530/23384 [00:03<00:04, 2877.22it/s] 51%|█████     | 11818/23384 [00:04<00:04, 2364.55it/s] 52%|█████▏    | 12115/23384 [00:04<00:04, 2518.74it/s] 53%|█████▎    | 12398/23384 [00:04<00:04, 2600.69it/s] 54%|█████▍    | 12691/23384 [00:04<00:03, 2690.20it/s] 56%|█████▌    | 12981/23384 [00:04<00:03, 2749.69it/s] 57%|█████▋    | 13265/23384 [00:04<00:03, 2773.45it/s] 58%|█████▊    | 13561/23384 [00:04<00:03, 2827.60it/s] 59%|█████▉    | 13848/23384 [00:04<00:03, 2838.06it/s] 60%|██████    | 14136/23384 [00:04<00:03, 2848.20it/s] 62%|██████▏   | 14423/23384 [00:05<00:03, 2843.30it/s] 63%|██████▎   | 14716/23384 [00:05<00:03, 2868.31it/s] 64%|██████▍   | 15006/23384 [00:05<00:02, 2877.24it/s] 65%|██████▌   | 15295/23384 [00:05<00:02, 2865.57it/s] 67%|██████▋   | 15590/23384 [00:05<00:02, 2890.40it/s] 68%|██████▊   | 15884/23384 [00:05<00:02, 2903.96it/s] 69%|██████▉   | 16177/23384 [00:05<00:02, 2909.39it/s] 70%|███████   | 16469/23384 [00:05<00:02, 2901.90it/s] 72%|███████▏  | 16760/23384 [00:05<00:02, 2879.53it/s] 73%|███████▎  | 17052/23384 [00:05<00:02, 2890.62it/s] 74%|███████▍  | 17342/23384 [00:06<00:02, 2886.59it/s] 75%|███████▌  | 17631/23384 [00:06<00:01, 2881.80it/s] 77%|███████▋  | 17920/23384 [00:06<00:01, 2880.53it/s] 78%|███████▊  | 18209/23384 [00:06<00:01, 2848.70it/s] 79%|███████▉  | 18506/23384 [00:06<00:01, 2881.98it/s] 80%|████████  | 18797/23384 [00:06<00:01, 2886.85it/s] 82%|████████▏ | 19087/23384 [00:06<00:01, 2889.15it/s] 83%|████████▎ | 19376/23384 [00:06<00:01, 2877.70it/s] 84%|████████▍ | 19673/23384 [00:06<00:01, 2903.76it/s] 85%|████████▌ | 19964/23384 [00:06<00:01, 2900.84it/s] 87%|████████▋ | 20255/23384 [00:07<00:01, 2261.45it/s] 88%|████████▊ | 20552/23384 [00:07<00:01, 2436.78it/s] 89%|████████▉ | 20836/23384 [00:07<00:01, 2542.30it/s] 90%|█████████ | 21124/23384 [00:07<00:00, 2632.04it/s] 92%|█████████▏| 21408/23384 [00:07<00:00, 2687.24it/s] 93%|█████████▎| 21695/23384 [00:07<00:00, 2738.71it/s] 94%|█████████▍| 21984/23384 [00:07<00:00, 2779.26it/s] 95%|█████████▌| 22280/23384 [00:07<00:00, 2829.27it/s] 97%|█████████▋| 22572/23384 [00:07<00:00, 2854.97it/s] 98%|█████████▊| 22860/23384 [00:08<00:00, 2858.18it/s] 99%|█████████▉| 23149/23384 [00:08<00:00, 2866.55it/s]100%|██████████| 23384/23384 [00:08<00:00, 2845.80it/s]
-  0%|          | 0/1460 [00:00<?, ?it/s] 20%|██        | 293/1460 [00:00<00:00, 2923.72it/s] 40%|████      | 586/1460 [00:00<00:00, 2878.87it/s] 60%|██████    | 882/1460 [00:00<00:00, 2915.22it/s] 80%|████████  | 1174/1460 [00:00<00:00, 2901.19it/s]100%|██████████| 1460/1460 [00:00<00:00, 2909.64it/s]
-Reading ./checkpoints/t2m/Comp_v6_KLD005/opt.txt
-Loading dataset t2m ...
-  0%|          | 0/1460 [00:00<?, ?it/s] 20%|██        | 296/1460 [00:00<00:00, 2957.51it/s] 41%|████      | 592/1460 [00:00<00:00, 2891.99it/s] 60%|██████    | 882/1460 [00:00<00:00, 2867.73it/s] 81%|████████  | 1176/1460 [00:00<00:00, 2891.82it/s]100%|██████████| 1460/1460 [00:00<00:00, 2899.93it/s]Pointer Pointing at 0
-Ground Truth Dataset Loading Completed!!!
-Reading ./checkpoints/t2m/Comp_v6_KLD005/opt.txt
-Loading Evaluation Model Wrapper (Epoch 28) Completed!!
-Total Epochs: 500, Total Iters: 185500
-Iters Per Epoch, Training: 0371, Validation: 023
-
---> 	 Eva. Ep 0 :, FID. 50.2186, Diversity Real. 9.5821, Diversity. 2.9125, R_precision_real. [0.52445652 0.71331522 0.81521739], R_precision. [0.04144022 0.07404891 0.1107337 ], matching_score_real. 2.9023270399674126, matching_score_pred. 8.505413169446198
---> --> 	 FID Improved from 100.00000 to 50.21860 !!!
---> --> 	 matching_score Improved from 100.00000 to 8.50541 !!!
---> --> 	 Diversity Improved from 100.00000 to 2.91251 !!!
---> --> 	 Top1 Improved from 0.0000 to 0.0414 !!!
---> --> 	 Top2 Improved from 0.0000 to 0.0740 !!!
---> --> 	 Top3 Improved from 0.0000 to 0.1107 !!!
-/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:450: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  mids = trans.generate(clip_text, m_length//4, time_steps, cond_scale, temperature=1)
-/nas2/data/dpfla3573/code/MM_SeCo/models/t2m_eval_wrapper.py:73: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens = m_lens // self.opt.unit_length
-ep/it: 0-  49 niter:    50  0m 26s (- 1666m 22s) completed:  0%) loss: 12.4537  acc: 0.0051  lr: 0.0000 
-ep/it: 0-  99 niter:   100  0m 39s (- 1213m 28s) completed:  0%) loss: 12.2123  acc: 0.0212  lr: 0.0000 
-ep/it: 0- 149 niter:   150  0m 51s (- 1064m 48s) completed:  0%) loss: 11.9919  acc: 0.0231  lr: 0.0000 
-ep/it: 0- 199 niter:   200  1m 4s (- 991m 58s) completed:  0%) loss: 11.8423  acc: 0.0229  lr: 0.0000 
-ep/it: 0- 249 niter:   250  1m 16s (- 948m 44s) completed:  0%) loss: 11.7461  acc: 0.0211  lr: 0.0000 
-ep/it: 0- 299 niter:   300  1m 29s (- 916m 36s) completed:  0%) loss: 11.6629  acc: 0.0222  lr: 0.0000 
-ep/it: 0- 349 niter:   350  1m 41s (- 896m 13s) completed:  0%) loss: 11.6351  acc: 0.0217  lr: 0.0000 
-Validation time:
-/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:59: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens_vq = m_lens // 4
-Validation loss:5.804, accuracy:0.025
-Improved accuracy from 0.00 to 0.024846913576450035!!!
-/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:44: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens = m_lens // 4
---> 	 Eva. Ep 1 :, FID. 32.7731, Diversity Real. 9.4373, Diversity. 5.8787, R_precision_real. [0.50951087 0.71195652 0.81046196], R_precision. [0.05095109 0.09442935 0.14741848], matching_score_real. 2.8742519150609556, matching_score_pred. 8.612220815990282
---> --> 	 FID Improved from 50.21860 to 32.77313 !!!
---> --> 	 Diversity Improved from 2.91251 to 5.87872 !!!
---> --> 	 Top1 Improved from 0.0414 to 0.0510 !!!
---> --> 	 Top2 Improved from 0.0740 to 0.0944 !!!
---> --> 	 Top3 Improved from 0.1107 to 0.1474 !!!
-ep/it: 1-  28 niter:   400  2m 10s (- 1004m 37s) completed:  0%) loss: 11.5099  acc: 0.0244  lr: 0.0000 
-ep/it: 1-  78 niter:   450  2m 22s (- 978m 10s) completed:  0%) loss: 11.4141  acc: 0.0293  lr: 0.0000 
-ep/it: 1- 128 niter:   500  2m 35s (- 956m 49s) completed:  0%) loss: 11.2617  acc: 0.0305  lr: 0.0000 
-ep/it: 1- 178 niter:   550  2m 48s (- 942m 12s) completed:  0%) loss: 11.1263  acc: 0.0331  lr: 0.0001 
-ep/it: 1- 228 niter:   600  3m 0s (- 927m 18s) completed:  0%) loss: 11.0450  acc: 0.0330  lr: 0.0001 
-ep/it: 1- 278 niter:   650  3m 13s (- 915m 2s) completed:  0%) loss: 10.9237  acc: 0.0396  lr: 0.0001 
-ep/it: 1- 328 niter:   700  3m 25s (- 904m 2s) completed:  0%) loss: 10.7804  acc: 0.0448  lr: 0.0001 
-Validation time:
-Validation loss:5.211, accuracy:0.049
-Improved accuracy from 0.02 to 0.04893902867384579!!!
---> 	 Eva. Ep 2 :, FID. 4.8878, Diversity Real. 9.4055, Diversity. 9.0431, R_precision_real. [0.51019022 0.68546196 0.79415761], R_precision. [0.21195652 0.36956522 0.48845109], matching_score_real. 2.936334413030873, matching_score_pred. 5.230943140776261
---> --> 	 FID Improved from 32.77313 to 4.88775 !!!
---> --> 	 matching_score Improved from 8.50541 to 5.23094 !!!
---> --> 	 Diversity Improved from 5.87872 to 9.04312 !!!
---> --> 	 Top1 Improved from 0.0510 to 0.2120 !!!
---> --> 	 Top2 Improved from 0.0944 to 0.3696 !!!
---> --> 	 Top3 Improved from 0.1474 to 0.4885 !!!
-ep/it: 2-   7 niter:   750  3m 54s (- 963m 54s) completed:  0%) loss: 10.6505  acc: 0.0463  lr: 0.0001 
-ep/it: 2-  57 niter:   800  4m 7s (- 951m 18s) completed:  0%) loss: 10.4862  acc: 0.0547  lr: 0.0001 
-ep/it: 2- 107 niter:   850  4m 19s (- 940m 19s) completed:  0%) loss: 10.4300  acc: 0.0569  lr: 0.0001 
-ep/it: 2- 157 niter:   900  4m 32s (- 930m 30s) completed:  0%) loss: 10.3557  acc: 0.0587  lr: 0.0001 
-ep/it: 2- 207 niter:   950  4m 44s (- 922m 8s) completed:  0%) loss: 10.3055  acc: 0.0604  lr: 0.0001 
-ep/it: 2- 257 niter:  1000  4m 57s (- 913m 58s) completed:  0%) loss: 10.2111  acc: 0.0626  lr: 0.0001 
-ep/it: 2- 307 niter:  1050  5m 10s (- 908m 24s) completed:  0%) loss: 10.0859  acc: 0.0653  lr: 0.0001 
-ep/it: 2- 357 niter:  1100  5m 22s (- 901m 53s) completed:  0%) loss: 10.0801  acc: 0.0671  lr: 0.0001 
-Validation time:
-Validation loss:4.862, accuracy:0.073
-Improved accuracy from 0.05 to 0.07274477475363275!!!
---> 	 Eva. Ep 3 :, FID. 2.6366, Diversity Real. 9.4467, Diversity. 9.2909, R_precision_real. [0.52649457 0.71127717 0.7982337 ], R_precision. [0.28872283 0.46331522 0.57608696], matching_score_real. 2.911588342293449, matching_score_pred. 4.601271650065547
---> --> 	 FID Improved from 4.88775 to 2.63658 !!!
---> --> 	 matching_score Improved from 5.23094 to 4.60127 !!!
---> --> 	 Diversity Improved from 9.04312 to 9.29093 !!!
---> --> 	 Top1 Improved from 0.2120 to 0.2887 !!!
---> --> 	 Top2 Improved from 0.3696 to 0.4633 !!!
---> --> 	 Top3 Improved from 0.4885 to 0.5761 !!!
-ep/it: 3-  36 niter:  1150  5m 53s (- 944m 43s) completed:  0%) loss: 9.9469  acc: 0.0736  lr: 0.0001 
-ep/it: 3-  86 niter:  1200  6m 6s (- 937m 14s) completed:  0%) loss: 9.8596  acc: 0.0738  lr: 0.0001 
-ep/it: 3- 136 niter:  1250  6m 18s (- 930m 7s) completed:  0%) loss: 9.8089  acc: 0.0815  lr: 0.0001 
-ep/it: 3- 186 niter:  1300  6m 30s (- 923m 21s) completed:  0%) loss: 9.7670  acc: 0.0822  lr: 0.0001 
-ep/it: 3- 236 niter:  1350  6m 43s (- 917m 24s) completed:  0%) loss: 9.7057  acc: 0.0840  lr: 0.0001 
-ep/it: 3- 286 niter:  1400  6m 55s (- 911m 42s) completed:  0%) loss: 9.6498  acc: 0.0896  lr: 0.0001 
-ep/it: 3- 336 niter:  1450  7m 8s (- 906m 14s) completed:  0%) loss: 9.5275  acc: 0.0913  lr: 0.0001 
-Validation time:
-Validation loss:4.521, accuracy:0.099
-Improved accuracy from 0.07 to 0.09904395950877148!!!
---> 	 Eva. Ep 4 :, FID. 2.2312, Diversity Real. 9.2413, Diversity. 9.9741, R_precision_real. [0.5482337  0.71603261 0.80910326], R_precision. [0.33627717 0.52513587 0.65081522], matching_score_real. 2.8637366087540337, matching_score_pred. 4.128954363905865
---> --> 	 FID Improved from 2.63658 to 2.23124 !!!
---> --> 	 matching_score Improved from 4.60127 to 4.12895 !!!
---> --> 	 Top1 Improved from 0.2887 to 0.3363 !!!
---> --> 	 Top2 Improved from 0.4633 to 0.5251 !!!
---> --> 	 Top3 Improved from 0.5761 to 0.6508 !!!
-ep/it: 4-  15 niter:  1500  7m 36s (- 934m 16s) completed:  0%) loss: 9.4203  acc: 0.1016  lr: 0.0001 
-ep/it: 4-  65 niter:  1550  7m 49s (- 929m 22s) completed:  0%) loss: 9.3269  acc: 0.1087  lr: 0.0002 
-ep/it: 4- 115 niter:  1600  8m 2s (- 923m 49s) completed:  0%) loss: 9.2788  acc: 0.1146  lr: 0.0002 
-ep/it: 4- 165 niter:  1650  8m 14s (- 918m 55s) completed:  0%) loss: 9.2624  acc: 0.1200  lr: 0.0002 
-ep/it: 4- 215 niter:  1700  8m 26s (- 913m 28s) completed:  0%) loss: 9.1932  acc: 0.1238  lr: 0.0002 
-ep/it: 4- 265 niter:  1750  8m 39s (- 909m 10s) completed:  0%) loss: 9.1951  acc: 0.1250  lr: 0.0002 
-ep/it: 4- 315 niter:  1800  8m 52s (- 904m 54s) completed:  0%) loss: 9.1276  acc: 0.1275  lr: 0.0002 
-ep/it: 4- 365 niter:  1850  9m 4s (- 900m 50s) completed:  0%) loss: 9.0539  acc: 0.1461  lr: 0.0002 
-Validation time:
-Validation loss:4.265, accuracy:0.139
-Improved accuracy from 0.10 to 0.1387470377528149!!!
---> 	 Eva. Ep 5 :, FID. 3.9383, Diversity Real. 9.4416, Diversity. 9.2982, R_precision_real. [0.51358696 0.69836957 0.79211957], R_precision. [0.3267663  0.50679348 0.61616848], matching_score_real. 2.960605393285337, matching_score_pred. 4.486990327420442
---> --> 	 Diversity Improved from 9.29093 to 9.29824 !!!
-ep/it: 5-  44 niter:  1900  9m 33s (- 923m 7s) completed:  1%) loss: 8.9930  acc: 0.1509  lr: 0.0002 
-ep/it: 5-  94 niter:  1950  9m 45s (- 918m 49s) completed:  1%) loss: 8.9701  acc: 0.1531  lr: 0.0002 
-ep/it: 5- 144 niter:  2000  9m 58s (- 914m 37s) completed:  1%) loss: 8.8426  acc: 0.1634  lr: 0.0002 
-ep/it: 5- 194 niter:  2050  10m 11s (- 911m 33s) completed:  1%) loss: 8.8937  acc: 0.1648  lr: 0.0002 
-ep/it: 5- 244 niter:  2100  10m 23s (- 907m 48s) completed:  1%) loss: 8.8722  acc: 0.1704  lr: 0.0002 
-ep/it: 5- 294 niter:  2150  10m 36s (- 904m 24s) completed:  1%) loss: 8.8519  acc: 0.1681  lr: 0.0002 
-ep/it: 5- 344 niter:  2200  10m 48s (- 900m 59s) completed:  1%) loss: 8.8304  acc: 0.1704  lr: 0.0002 
-Validation time:
-Validation loss:4.024, accuracy:0.184
-Improved accuracy from 0.14 to 0.1844938909230025!!!
---> 	 Eva. Ep 6 :, FID. 2.0535, Diversity Real. 9.1247, Diversity. 9.4811, R_precision_real. [0.51766304 0.70108696 0.79959239], R_precision. [0.34103261 0.52377717 0.64402174], matching_score_real. 2.949508143507916, matching_score_pred. 4.099835442460102
---> --> 	 FID Improved from 2.23124 to 2.05346 !!!
---> --> 	 matching_score Improved from 4.12895 to 4.09984 !!!
---> --> 	 Top1 Improved from 0.3363 to 0.3410 !!!
-ep/it: 6-  23 niter:  2250  11m 18s (- 921m 0s) completed:  1%) loss: 8.6904  acc: 0.1858  lr: 0.0002 
-ep/it: 6-  73 niter:  2300  11m 31s (- 917m 41s) completed:  1%) loss: 8.8322  acc: 0.1809  lr: 0.0002 
-ep/it: 6- 123 niter:  2350  11m 43s (- 914m 15s) completed:  1%) loss: 8.6521  acc: 0.1866  lr: 0.0002 
-ep/it: 6- 173 niter:  2400  11m 56s (- 910m 57s) completed:  1%) loss: 8.6712  acc: 0.1862  lr: 0.0002 
-ep/it: 6- 223 niter:  2450  12m 9s (- 907m 54s) completed:  1%) loss: 8.5780  acc: 0.2022  lr: 0.0002 
-ep/it: 6- 273 niter:  2500  12m 21s (- 904m 43s) completed:  1%) loss: 8.4942  acc: 0.2019  lr: 0.0002 
-ep/it: 6- 323 niter:  2550  12m 34s (- 902m 13s) completed:  1%) loss: 8.5885  acc: 0.1988  lr: 0.0002 
-Validation time:
-Validation loss:3.877, accuracy:0.200
-Improved accuracy from 0.18 to 0.1996730572503546!!!
---> 	 Eva. Ep 7 :, FID. 3.1382, Diversity Real. 9.5846, Diversity. 9.4229, R_precision_real. [0.51630435 0.71671196 0.80502717], R_precision. [0.34578804 0.53192935 0.64605978], matching_score_real. 2.8899369136146875, matching_score_pred. 4.225606534792029
---> --> 	 Diversity Improved from 9.29824 to 9.42285 !!!
---> --> 	 Top1 Improved from 0.3410 to 0.3458 !!!
---> --> 	 Top2 Improved from 0.5251 to 0.5319 !!!
-ep/it: 7-   2 niter:  2600  13m 4s (- 919m 18s) completed:  1%) loss: 8.6238  acc: 0.1953  lr: 0.0002 
-ep/it: 7-  52 niter:  2650  13m 16s (- 916m 11s) completed:  1%) loss: 8.5636  acc: 0.1994  lr: 0.0002 
-ep/it: 7- 102 niter:  2700  13m 29s (- 913m 9s) completed:  1%) loss: 8.4629  acc: 0.2099  lr: 0.0002 
-ep/it: 7- 152 niter:  2750  13m 41s (- 910m 11s) completed:  1%) loss: 8.4884  acc: 0.2035  lr: 0.0002 
-ep/it: 7- 202 niter:  2800  13m 54s (- 907m 24s) completed:  1%) loss: 8.4803  acc: 0.2092  lr: 0.0002 
-ep/it: 7- 252 niter:  2850  14m 6s (- 904m 38s) completed:  1%) loss: 8.4229  acc: 0.2179  lr: 0.0002 
-ep/it: 7- 302 niter:  2900  14m 19s (- 901m 51s) completed:  1%) loss: 8.4196  acc: 0.2156  lr: 0.0002 
-ep/it: 7- 352 niter:  2950  14m 31s (- 899m 14s) completed:  1%) loss: 8.4562  acc: 0.2157  lr: 0.0002 
-Validation time:
-Validation loss:3.784, accuracy:0.220
-Improved accuracy from 0.20 to 0.21981990402159485!!!
---> 	 Eva. Ep 8 :, FID. 2.5048, Diversity Real. 9.7441, Diversity. 9.5536, R_precision_real. [0.52038043 0.703125   0.78804348], R_precision. [0.34307065 0.54076087 0.65081522], matching_score_real. 2.9620302189951357, matching_score_pred. 4.206877755082172
---> --> 	 Diversity Improved from 9.42285 to 9.55360 !!!
---> --> 	 Top2 Improved from 0.5319 to 0.5408 !!!
-ep/it: 8-  31 niter:  3000  15m 0s (- 913m 7s) completed:  1%) loss: 8.4256  acc: 0.2218  lr: 0.0002 
-ep/it: 8-  81 niter:  3050  15m 13s (- 910m 54s) completed:  1%) loss: 8.3740  acc: 0.2284  lr: 0.0002 
-ep/it: 8- 131 niter:  3100  15m 26s (- 908m 18s) completed:  1%) loss: 8.3074  acc: 0.2258  lr: 0.0002 
-ep/it: 8- 181 niter:  3150  15m 38s (- 905m 30s) completed:  1%) loss: 8.3599  acc: 0.2299  lr: 0.0002 
-ep/it: 8- 231 niter:  3200  15m 50s (- 902m 56s) completed:  1%) loss: 8.2902  acc: 0.2288  lr: 0.0002 
-ep/it: 8- 281 niter:  3250  16m 3s (- 900m 37s) completed:  1%) loss: 8.3541  acc: 0.2270  lr: 0.0002 
-ep/it: 8- 331 niter:  3300  16m 16s (- 898m 25s) completed:  1%) loss: 8.2617  acc: 0.2324  lr: 0.0002 
-Validation time:
-Validation loss:3.705, accuracy:0.237
-Improved accuracy from 0.22 to 0.23737813014051187!!!
---> 	 Eva. Ep 9 :, FID. 2.1612, Diversity Real. 9.1898, Diversity. 9.7668, R_precision_real. [0.50815217 0.70108696 0.79415761], R_precision. [0.36480978 0.53736413 0.65353261], matching_score_real. 2.902738576350005, matching_score_pred. 4.077238129532856
---> --> 	 matching_score Improved from 4.09984 to 4.07724 !!!
---> --> 	 Top1 Improved from 0.3458 to 0.3648 !!!
---> --> 	 Top3 Improved from 0.6508 to 0.6535 !!!
-ep/it: 9-  10 niter:  3350  16m 45s (- 910m 46s) completed:  1%) loss: 8.3232  acc: 0.2322  lr: 0.0002 
-ep/it: 9-  60 niter:  3400  16m 57s (- 908m 20s) completed:  1%) loss: 8.2154  acc: 0.2427  lr: 0.0002 
-ep/it: 9- 110 niter:  3450  17m 10s (- 906m 1s) completed:  1%) loss: 8.2352  acc: 0.2395  lr: 0.0002 
-ep/it: 9- 160 niter:  3500  17m 22s (- 903m 34s) completed:  1%) loss: 8.1817  acc: 0.2498  lr: 0.0002 
-ep/it: 9- 210 niter:  3550  17m 35s (- 901m 37s) completed:  1%) loss: 8.1968  acc: 0.2442  lr: 0.0002 
-ep/it: 9- 260 niter:  3600  17m 48s (- 899m 24s) completed:  1%) loss: 8.1770  acc: 0.2516  lr: 0.0002 
-ep/it: 9- 310 niter:  3650  18m 0s (- 897m 10s) completed:  1%) loss: 8.1991  acc: 0.2451  lr: 0.0002 
-ep/it: 9- 360 niter:  3700  18m 12s (- 895m 1s) completed:  1%) loss: 8.2678  acc: 0.2412  lr: 0.0002 
-Validation time:
-Validation loss:3.579, accuracy:0.252
-Improved accuracy from 0.24 to 0.2519049754609232!!!
---> 	 Eva. Ep 10 :, FID. 1.8120, Diversity Real. 9.0396, Diversity. 9.9788, R_precision_real. [0.49184783 0.68138587 0.77513587], R_precision. [0.35869565 0.54483696 0.6861413 ], matching_score_real. 3.010508521743443, matching_score_pred. 3.9586433275886206
---> --> 	 FID Improved from 2.05346 to 1.81202 !!!
---> --> 	 matching_score Improved from 4.07724 to 3.95864 !!!
---> --> 	 Top2 Improved from 0.5408 to 0.5448 !!!
---> --> 	 Top3 Improved from 0.6535 to 0.6861 !!!
-ep/it:10-  39 niter:  3750  18m 50s (- 912m 58s) completed:  2%) loss: 8.1429  acc: 0.2505  lr: 0.0002 
-ep/it:10-  89 niter:  3800  19m 2s (- 910m 41s) completed:  2%) loss: 8.1045  acc: 0.2471  lr: 0.0002 
-ep/it:10- 139 niter:  3850  19m 15s (- 908m 21s) completed:  2%) loss: 8.1270  acc: 0.2545  lr: 0.0002 
-ep/it:10- 189 niter:  3900  19m 27s (- 906m 10s) completed:  2%) loss: 8.0545  acc: 0.2595  lr: 0.0002 
-ep/it:10- 239 niter:  3950  19m 40s (- 904m 4s) completed:  2%) loss: 8.1046  acc: 0.2583  lr: 0.0002 
-ep/it:10- 289 niter:  4000  19m 52s (- 902m 6s) completed:  2%) loss: 8.0446  acc: 0.2587  lr: 0.0002 
-ep/it:10- 339 niter:  4050  20m 6s (- 900m 42s) completed:  2%) loss: 8.1198  acc: 0.2618  lr: 0.0002 
-Validation time:
-/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:59: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens_vq = m_lens // 4
-Validation loss:3.506, accuracy:0.265
-Improved accuracy from 0.25 to 0.26485117881194403!!!
-/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:44: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens = m_lens // 4
---> 	 Eva. Ep 11 :, FID. 1.3538, Diversity Real. 9.5989, Diversity. 9.4933, R_precision_real. [0.51766304 0.69972826 0.79347826], R_precision. [0.37160326 0.55842391 0.6732337 ], matching_score_real. 2.923618601716083, matching_score_pred. 3.866541302722433
---> --> 	 FID Improved from 1.81202 to 1.35384 !!!
---> --> 	 matching_score Improved from 3.95864 to 3.86654 !!!
---> --> 	 Top1 Improved from 0.3648 to 0.3716 !!!
---> --> 	 Top2 Improved from 0.5448 to 0.5584 !!!
-/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:450: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  mids = trans.generate(clip_text, m_length//4, time_steps, cond_scale, temperature=1)
-/nas2/data/dpfla3573/code/MM_SeCo/models/t2m_eval_wrapper.py:73: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens = m_lens // self.opt.unit_length
-ep/it:11-  18 niter:  4100  20m 35s (- 911m 15s) completed:  2%) loss: 7.9770  acc: 0.2654  lr: 0.0002 
-ep/it:11-  68 niter:  4150  20m 48s (- 909m 10s) completed:  2%) loss: 8.0360  acc: 0.2561  lr: 0.0002 
-ep/it:11- 118 niter:  4200  21m 1s (- 907m 13s) completed:  2%) loss: 7.9983  acc: 0.2683  lr: 0.0002 
-ep/it:11- 168 niter:  4250  21m 13s (- 905m 11s) completed:  2%) loss: 8.0741  acc: 0.2569  lr: 0.0002 
-ep/it:11- 218 niter:  4300  21m 26s (- 903m 14s) completed:  2%) loss: 7.9354  acc: 0.2700  lr: 0.0002 
-ep/it:11- 268 niter:  4350  21m 38s (- 901m 24s) completed:  2%) loss: 8.0435  acc: 0.2635  lr: 0.0002 
-ep/it:11- 318 niter:  4400  21m 51s (- 899m 32s) completed:  2%) loss: 7.9254  acc: 0.2728  lr: 0.0002 
-ep/it:11- 368 niter:  4450  22m 3s (- 897m 44s) completed:  2%) loss: 7.9632  acc: 0.2685  lr: 0.0002 
-Validation time:
-Validation loss:3.451, accuracy:0.273
-Improved accuracy from 0.26 to 0.2734556515579638!!!
---> 	 Eva. Ep 12 :, FID. 1.7844, Diversity Real. 9.5046, Diversity. 10.0420, R_precision_real. [0.52309783 0.69701087 0.79279891], R_precision. [0.38858696 0.57880435 0.68002717], matching_score_real. 2.938658864601799, matching_score_pred. 3.7775063151898594
---> --> 	 matching_score Improved from 3.86654 to 3.77751 !!!
---> --> 	 Top1 Improved from 0.3716 to 0.3886 !!!
---> --> 	 Top2 Improved from 0.5584 to 0.5788 !!!
-ep/it:12-  47 niter:  4500  22m 33s (- 907m 14s) completed:  2%) loss: 7.9130  acc: 0.2705  lr: 0.0002 
-ep/it:12-  97 niter:  4550  22m 46s (- 905m 46s) completed:  2%) loss: 7.8625  acc: 0.2796  lr: 0.0002 
-ep/it:12- 147 niter:  4600  22m 58s (- 903m 44s) completed:  2%) loss: 7.9756  acc: 0.2756  lr: 0.0002 
-ep/it:12- 197 niter:  4650  23m 11s (- 901m 50s) completed:  2%) loss: 7.9864  acc: 0.2725  lr: 0.0002 
-ep/it:12- 247 niter:  4700  23m 23s (- 899m 54s) completed:  2%) loss: 7.9854  acc: 0.2691  lr: 0.0002 
-ep/it:12- 297 niter:  4750  23m 35s (- 897m 52s) completed:  2%) loss: 7.9161  acc: 0.2769  lr: 0.0002 
-ep/it:12- 347 niter:  4800  23m 48s (- 896m 11s) completed:  2%) loss: 7.9477  acc: 0.2723  lr: 0.0002 
-Validation time:
-Validation loss:3.441, accuracy:0.276
-Improved accuracy from 0.27 to 0.2759431425644004!!!
---> 	 Eva. Ep 13 :, FID. 1.6145, Diversity Real. 9.5053, Diversity. 10.1290, R_precision_real. [0.52241848 0.71399457 0.80434783], R_precision. [0.38994565 0.57269022 0.68546196], matching_score_real. 2.9082112571467524, matching_score_pred. 3.847430462422578
---> --> 	 Top1 Improved from 0.3886 to 0.3899 !!!
-ep/it:13-  26 niter:  4850  24m 17s (- 904m 47s) completed:  2%) loss: 7.9008  acc: 0.2736  lr: 0.0002 
-ep/it:13-  76 niter:  4900  24m 30s (- 903m 0s) completed:  2%) loss: 7.8928  acc: 0.2819  lr: 0.0002 
-ep/it:13- 126 niter:  4950  24m 42s (- 901m 13s) completed:  2%) loss: 7.8785  acc: 0.2722  lr: 0.0002 
-ep/it:13- 176 niter:  5000  24m 55s (- 899m 31s) completed:  2%) loss: 7.8085  acc: 0.2801  lr: 0.0002 
-ep/it:13- 226 niter:  5050  25m 8s (- 898m 13s) completed:  2%) loss: 7.8564  acc: 0.2882  lr: 0.0002 
-ep/it:13- 276 niter:  5100  25m 20s (- 896m 33s) completed:  2%) loss: 7.8950  acc: 0.2804  lr: 0.0002 
-ep/it:13- 326 niter:  5150  25m 33s (- 894m 57s) completed:  2%) loss: 7.8482  acc: 0.2874  lr: 0.0002 
-Validation time:
-Validation loss:3.428, accuracy:0.276
-Improved accuracy from 0.28 to 0.27628964056139405!!!
---> 	 Eva. Ep 14 :, FID. 1.2148, Diversity Real. 9.4800, Diversity. 9.8522, R_precision_real. [0.51222826 0.70040761 0.80570652], R_precision. [0.39266304 0.57404891 0.69972826], matching_score_real. 2.8910328149795532, matching_score_pred. 3.7279452862946885
---> --> 	 FID Improved from 1.35384 to 1.21479 !!!
---> --> 	 matching_score Improved from 3.77751 to 3.72795 !!!
---> --> 	 Top1 Improved from 0.3899 to 0.3927 !!!
---> --> 	 Top3 Improved from 0.6861 to 0.6997 !!!
-ep/it:14-   5 niter:  5200  26m 2s (- 903m 9s) completed:  2%) loss: 7.8872  acc: 0.2744  lr: 0.0002 
-ep/it:14-  55 niter:  5250  26m 15s (- 901m 35s) completed:  2%) loss: 7.8033  acc: 0.2895  lr: 0.0002 
-ep/it:14- 105 niter:  5300  26m 28s (- 899m 58s) completed:  2%) loss: 7.8731  acc: 0.2802  lr: 0.0002 
-ep/it:14- 155 niter:  5350  26m 40s (- 898m 27s) completed:  2%) loss: 7.8041  acc: 0.2892  lr: 0.0002 
-ep/it:14- 205 niter:  5400  26m 53s (- 896m 58s) completed:  2%) loss: 7.7266  acc: 0.2864  lr: 0.0002 
-ep/it:14- 255 niter:  5450  27m 6s (- 895m 24s) completed:  2%) loss: 7.8156  acc: 0.2850  lr: 0.0002 
-ep/it:14- 305 niter:  5500  27m 19s (- 894m 2s) completed:  2%) loss: 7.8348  acc: 0.2886  lr: 0.0002 
-ep/it:14- 355 niter:  5550  27m 32s (- 893m 2s) completed:  2%) loss: 7.8041  acc: 0.2812  lr: 0.0002 
-Validation time:
-Validation loss:3.326, accuracy:0.298
-Improved accuracy from 0.28 to 0.29753637054692145!!!
---> 	 Eva. Ep 15 :, FID. 1.0716, Diversity Real. 9.2652, Diversity. 9.4531, R_precision_real. [0.50339674 0.69565217 0.79891304], R_precision. [0.3892663  0.58491848 0.69089674], matching_score_real. 2.887026812719262, matching_score_pred. 3.712485204572263
---> --> 	 FID Improved from 1.21479 to 1.07163 !!!
---> --> 	 matching_score Improved from 3.72795 to 3.71249 !!!
---> --> 	 Diversity Improved from 9.55360 to 9.45311 !!!
---> --> 	 Top2 Improved from 0.5788 to 0.5849 !!!
-ep/it:15-  34 niter:  5600  28m 1s (- 900m 30s) completed:  3%) loss: 7.8044  acc: 0.2912  lr: 0.0002 
-ep/it:15-  84 niter:  5650  28m 14s (- 898m 59s) completed:  3%) loss: 7.7567  acc: 0.2929  lr: 0.0002 
-ep/it:15- 134 niter:  5700  28m 27s (- 897m 37s) completed:  3%) loss: 7.7259  acc: 0.2888  lr: 0.0002 
-ep/it:15- 184 niter:  5750  28m 40s (- 896m 16s) completed:  3%) loss: 7.8099  acc: 0.2885  lr: 0.0002 
-ep/it:15- 234 niter:  5800  28m 52s (- 894m 51s) completed:  3%) loss: 7.7165  acc: 0.2974  lr: 0.0002 
-ep/it:15- 284 niter:  5850  29m 5s (- 893m 22s) completed:  3%) loss: 7.7907  acc: 0.2834  lr: 0.0002 
-ep/it:15- 334 niter:  5900  29m 18s (- 891m 55s) completed:  3%) loss: 7.7600  acc: 0.2974  lr: 0.0002 
-Validation time:
-Validation loss:3.301, accuracy:0.296
---> 	 Eva. Ep 16 :, FID. 1.3587, Diversity Real. 9.5940, Diversity. 9.8705, R_precision_real. [0.52445652 0.70788043 0.80366848], R_precision. [0.3892663  0.59307065 0.70652174], matching_score_real. 2.9036283130231113, matching_score_pred. 3.793522031410881
---> --> 	 Top2 Improved from 0.5849 to 0.5931 !!!
---> --> 	 Top3 Improved from 0.6997 to 0.7065 !!!
-ep/it:16-  13 niter:  5950  29m 46s (- 898m 28s) completed:  3%) loss: 7.7646  acc: 0.2933  lr: 0.0002 
-ep/it:16-  63 niter:  6000  29m 59s (- 897m 3s) completed:  3%) loss: 7.7253  acc: 0.2954  lr: 0.0002 
-ep/it:16- 113 niter:  6050  30m 12s (- 895m 50s) completed:  3%) loss: 7.6964  acc: 0.2954  lr: 0.0002 
-ep/it:16- 163 niter:  6100  30m 24s (- 894m 22s) completed:  3%) loss: 7.7652  acc: 0.2879  lr: 0.0002 
-ep/it:16- 213 niter:  6150  30m 37s (- 892m 56s) completed:  3%) loss: 7.7339  acc: 0.2979  lr: 0.0002 
-ep/it:16- 263 niter:  6200  30m 49s (- 891m 34s) completed:  3%) loss: 7.7022  acc: 0.2982  lr: 0.0002 
-ep/it:16- 313 niter:  6250  31m 2s (- 890m 19s) completed:  3%) loss: 7.7573  acc: 0.2958  lr: 0.0002 
-ep/it:16- 363 niter:  6300  31m 15s (- 889m 0s) completed:  3%) loss: 7.6715  acc: 0.3033  lr: 0.0002 
-Validation time:
-Validation loss:3.285, accuracy:0.300
-Improved accuracy from 0.30 to 0.29987502227658813!!!
---> 	 Eva. Ep 17 :, FID. 1.4364, Diversity Real. 9.4699, Diversity. 9.8014, R_precision_real. [0.51290761 0.71195652 0.80842391], R_precision. [0.39130435 0.58288043 0.69429348], matching_score_real. 2.957576627316682, matching_score_pred. 3.782070631566255
-ep/it:17-  42 niter:  6350  31m 44s (- 895m 23s) completed:  3%) loss: 7.7080  acc: 0.2963  lr: 0.0002 
-ep/it:17-  92 niter:  6400  31m 56s (- 894m 5s) completed:  3%) loss: 7.7047  acc: 0.2954  lr: 0.0002 
-ep/it:17- 142 niter:  6450  32m 9s (- 892m 43s) completed:  3%) loss: 7.6909  acc: 0.3038  lr: 0.0002 
-ep/it:17- 192 niter:  6500  32m 22s (- 891m 26s) completed:  3%) loss: 7.6556  acc: 0.3053  lr: 0.0002 
-ep/it:17- 242 niter:  6550  32m 35s (- 890m 35s) completed:  3%) loss: 7.7152  acc: 0.3000  lr: 0.0002 
-ep/it:17- 292 niter:  6600  32m 48s (- 889m 14s) completed:  3%) loss: 7.6760  acc: 0.2980  lr: 0.0002 
-ep/it:17- 342 niter:  6650  33m 0s (- 887m 57s) completed:  3%) loss: 7.6371  acc: 0.3078  lr: 0.0002 
-Validation time:
-Validation loss:3.280, accuracy:0.303
-Improved accuracy from 0.30 to 0.30268076256565424!!!
---> 	 Eva. Ep 18 :, FID. 1.1952, Diversity Real. 9.3124, Diversity. 9.3490, R_precision_real. [0.52173913 0.71875    0.80366848], R_precision. [0.40217391 0.58559783 0.69225543], matching_score_real. 2.916726288588151, matching_score_pred. 3.7273557289786963
---> --> 	 Diversity Improved from 9.45311 to 9.34901 !!!
---> --> 	 Top1 Improved from 0.3927 to 0.4022 !!!
-ep/it:18-  21 niter:  6700  33m 32s (- 895m 4s) completed:  3%) loss: 7.6386  acc: 0.3034  lr: 0.0002 
-ep/it:18-  71 niter:  6750  33m 44s (- 893m 43s) completed:  3%) loss: 7.6767  acc: 0.3062  lr: 0.0002 
-ep/it:18- 121 niter:  6800  33m 57s (- 892m 24s) completed:  3%) loss: 7.6414  acc: 0.3048  lr: 0.0002 
-ep/it:18- 171 niter:  6850  34m 9s (- 890m 55s) completed:  3%) loss: 7.6201  acc: 0.3009  lr: 0.0002 
-ep/it:18- 221 niter:  6900  34m 22s (- 889m 44s) completed:  3%) loss: 7.6373  acc: 0.3012  lr: 0.0002 
-ep/it:18- 271 niter:  6950  34m 34s (- 888m 24s) completed:  3%) loss: 7.7512  acc: 0.2924  lr: 0.0002 
-ep/it:18- 321 niter:  7000  34m 47s (- 887m 11s) completed:  3%) loss: 7.6442  acc: 0.3074  lr: 0.0002 
-Validation time:
-Validation loss:3.220, accuracy:0.314
-Improved accuracy from 0.30 to 0.3144536122031834!!!
---> 	 Eva. Ep 19 :, FID. 1.0793, Diversity Real. 10.0396, Diversity. 9.7702, R_precision_real. [0.52105978 0.70923913 0.80706522], R_precision. [0.40149457 0.59850543 0.70584239], matching_score_real. 2.8933981449707695, matching_score_pred. 3.607107400894165
---> --> 	 matching_score Improved from 3.71249 to 3.60711 !!!
---> --> 	 Diversity Improved from 9.34901 to 9.77018 !!!
---> --> 	 Top2 Improved from 0.5931 to 0.5985 !!!
-ep/it:19-   0 niter:  7050  35m 17s (- 893m 12s) completed:  3%) loss: 7.6719  acc: 0.3052  lr: 0.0002 
-ep/it:19-  50 niter:  7100  35m 30s (- 892m 3s) completed:  3%) loss: 7.6768  acc: 0.3020  lr: 0.0002 
-ep/it:19- 100 niter:  7150  35m 42s (- 890m 41s) completed:  3%) loss: 7.5619  acc: 0.3118  lr: 0.0002 
-ep/it:19- 150 niter:  7200  35m 55s (- 889m 27s) completed:  3%) loss: 7.6665  acc: 0.3105  lr: 0.0002 
-ep/it:19- 200 niter:  7250  36m 7s (- 888m 16s) completed:  3%) loss: 7.6550  acc: 0.3019  lr: 0.0002 
-ep/it:19- 250 niter:  7300  36m 20s (- 887m 3s) completed:  3%) loss: 7.5837  acc: 0.3126  lr: 0.0002 
-ep/it:19- 300 niter:  7350  36m 32s (- 885m 47s) completed:  3%) loss: 7.6067  acc: 0.3089  lr: 0.0002 
-ep/it:19- 350 niter:  7400  36m 45s (- 884m 35s) completed:  3%) loss: 7.6279  acc: 0.3072  lr: 0.0002 
-Validation time:
-Validation loss:3.301, accuracy:0.304
---> 	 Eva. Ep 20 :, FID. 1.0567, Diversity Real. 9.3527, Diversity. 10.0492, R_precision_real. [0.515625   0.70516304 0.80230978], R_precision. [0.41440217 0.61820652 0.71671196], matching_score_real. 2.9217493015786875, matching_score_pred. 3.559164990549502
---> --> 	 FID Improved from 1.07163 to 1.05667 !!!
---> --> 	 matching_score Improved from 3.60711 to 3.55916 !!!
---> --> 	 Top1 Improved from 0.4022 to 0.4144 !!!
---> --> 	 Top2 Improved from 0.5985 to 0.6182 !!!
---> --> 	 Top3 Improved from 0.7065 to 0.7167 !!!
-ep/it:20-  29 niter:  7450  37m 32s (- 897m 6s) completed:  4%) loss: 7.5765  acc: 0.3168  lr: 0.0002 
-ep/it:20-  79 niter:  7500  37m 44s (- 895m 52s) completed:  4%) loss: 7.5823  acc: 0.3100  lr: 0.0002 
-ep/it:20- 129 niter:  7550  37m 57s (- 894m 48s) completed:  4%) loss: 7.5382  acc: 0.3185  lr: 0.0002 
-ep/it:20- 179 niter:  7600  38m 9s (- 893m 23s) completed:  4%) loss: 7.6146  acc: 0.3077  lr: 0.0002 
-ep/it:20- 229 niter:  7650  38m 22s (- 892m 6s) completed:  4%) loss: 7.6008  acc: 0.3120  lr: 0.0002 
-ep/it:20- 279 niter:  7700  38m 34s (- 890m 51s) completed:  4%) loss: 7.5808  acc: 0.3100  lr: 0.0002 
-ep/it:20- 329 niter:  7750  38m 47s (- 889m 36s) completed:  4%) loss: 7.5510  acc: 0.3108  lr: 0.0002 
-Validation time:
-/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:59: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens_vq = m_lens // 4
-Validation loss:3.235, accuracy:0.312
-/nas2/data/dpfla3573/code/MM_SeCo/models/mask_transformer/transformer_trainer.py:44: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens = m_lens // 4
---> 	 Eva. Ep 21 :, FID. 1.1607, Diversity Real. 9.3062, Diversity. 9.5206, R_precision_real. [0.53532609 0.70991848 0.80706522], R_precision. [0.40896739 0.59578804 0.69836957], matching_score_real. 2.934000761612602, matching_score_pred. 3.7556057131808736
---> --> 	 Diversity Improved from 9.77018 to 9.52059 !!!
-/nas2/data/dpfla3573/code/MM_SeCo/utils/eval_t2m.py:450: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  mids = trans.generate(clip_text, m_length//4, time_steps, cond_scale, temperature=1)
-/nas2/data/dpfla3573/code/MM_SeCo/models/t2m_eval_wrapper.py:73: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
-  m_lens = m_lens // self.opt.unit_length
-ep/it:21-   8 niter:  7800  39m 15s (- 894m 17s) completed:  4%) loss: 7.6172  acc: 0.3029  lr: 0.0002 
-ep/it:21-  58 niter:  7850  39m 27s (- 893m 3s) completed:  4%) loss: 7.5225  acc: 0.3127  lr: 0.0002 
-ep/it:21- 108 niter:  7900  39m 40s (- 891m 52s) completed:  4%) loss: 7.5289  acc: 0.3202  lr: 0.0002 
-ep/it:21- 158 niter:  7950  39m 52s (- 890m 41s) completed:  4%) loss: 7.5827  acc: 0.3139  lr: 0.0002 
-ep/it:21- 208 niter:  8000  40m 5s (- 889m 32s) completed:  4%) loss: 7.4941  acc: 0.3150  lr: 0.0002 
-ep/it:21- 258 niter:  8050  40m 18s (- 888m 30s) completed:  4%) loss: 7.5446  acc: 0.3159  lr: 0.0002 
-ep/it:21- 308 niter:  8100  40m 30s (- 887m 18s) completed:  4%) loss: 7.5834  acc: 0.3067  lr: 0.0002 
-ep/it:21- 358 niter:  8150  40m 43s (- 886m 8s) completed:  4%) loss: 7.5753  acc: 0.3141  lr: 0.0002 
-Validation time:
-Validation loss:3.231, accuracy:0.312
---> 	 Eva. Ep 22 :, FID. 1.3085, Diversity Real. 9.3811, Diversity. 9.9599, R_precision_real. [0.51222826 0.6888587  0.78600543], R_precision. [0.41508152 0.59375    0.70991848], matching_score_real. 2.999761187511942, matching_score_pred. 3.714545939279639
---> --> 	 Top1 Improved from 0.4144 to 0.4151 !!!
-ep/it:22-  37 niter:  8200  41m 11s (- 890m 40s) completed:  4%) loss: 7.5487  acc: 0.3116  lr: 0.0002 
-ep/it:22-  87 niter:  8250  41m 24s (- 889m 32s) completed:  4%) loss: 7.5772  acc: 0.3031  lr: 0.0002 
-ep/it:22- 137 niter:  8300  41m 36s (- 888m 18s) completed:  4%) loss: 7.5077  acc: 0.3166  lr: 0.0002 
-ep/it:22- 187 niter:  8350  41m 48s (- 887m 5s) completed:  4%) loss: 7.4618  acc: 0.3196  lr: 0.0002 
-ep/it:22- 237 niter:  8400  42m 1s (- 885m 56s) completed:  4%) loss: 7.5272  acc: 0.3189  lr: 0.0002 
-ep/it:22- 287 niter:  8450  42m 13s (- 884m 49s) completed:  4%) loss: 7.4701  acc: 0.3234  lr: 0.0002 
-ep/it:22- 337 niter:  8500  42m 26s (- 883m 44s) completed:  4%) loss: 7.5557  acc: 0.3102  lr: 0.0002 
-Validation time:
-Validation loss:3.197, accuracy:0.319
-Improved accuracy from 0.31 to 0.3190136914667876!!!
---> 	 Eva. Ep 23 :, FID. 0.9660, Diversity Real. 9.5663, Diversity. 9.6741, R_precision_real. [0.51222826 0.70108696 0.79755435], R_precision. [0.42391304 0.6107337  0.72554348], matching_score_real. 2.954346905583921, matching_score_pred. 3.607282358667125
---> --> 	 FID Improved from 1.05667 to 0.96605 !!!
---> --> 	 Top1 Improved from 0.4151 to 0.4239 !!!
---> --> 	 Top3 Improved from 0.7167 to 0.7255 !!!
-ep/it:23-  16 niter:  8550  42m 55s (- 888m 31s) completed:  4%) loss: 7.4922  acc: 0.3236  lr: 0.0002 
-ep/it:23-  66 niter:  8600  43m 8s (- 887m 25s) completed:  4%) loss: 7.4995  acc: 0.3180  lr: 0.0002 
-ep/it:23- 116 niter:  8650  43m 21s (- 886m 19s) completed:  4%) loss: 7.5476  acc: 0.3086  lr: 0.0002 
-ep/it:23- 166 niter:  8700  43m 33s (- 885m 11s) completed:  4%) loss: 7.5306  acc: 0.3133  lr: 0.0002 
-ep/it:23- 216 niter:  8750  43m 46s (- 884m 5s) completed:  4%) loss: 7.5085  acc: 0.3107  lr: 0.0002 
-ep/it:23- 266 niter:  8800  43m 58s (- 883m 0s) completed:  4%) loss: 7.5254  acc: 0.3169  lr: 0.0002 
-ep/it:23- 316 niter:  8850  44m 11s (- 881m 56s) completed:  4%) loss: 7.5508  acc: 0.3074  lr: 0.0002 
-ep/it:23- 366 niter:  8900  44m 23s (- 880m 48s) completed:  4%) loss: 7.4058  acc: 0.3251  lr: 0.0002 
-Validation time:
-Validation loss:3.222, accuracy:0.315
---> 	 Eva. Ep 24 :, FID. 0.6929, Diversity Real. 9.0881, Diversity. 9.7614, R_precision_real. [0.50407609 0.69836957 0.796875  ], R_precision. [0.44904891 0.63858696 0.73845109], matching_score_real. 2.9464191509329756, matching_score_pred. 3.418258889861729
---> --> 	 FID Improved from 0.96605 to 0.69289 !!!
---> --> 	 matching_score Improved from 3.55916 to 3.41826 !!!
---> --> 	 Top1 Improved from 0.4239 to 0.4490 !!!
---> --> 	 Top2 Improved from 0.6182 to 0.6386 !!!
---> --> 	 Top3 Improved from 0.7255 to 0.7385 !!!
-ep/it:24-  45 niter:  8950  44m 51s (- 884m 51s) completed:  4%) loss: 7.5177  acc: 0.3202  lr: 0.0002 
-ep/it:24-  95 niter:  9000  45m 4s (- 883m 53s) completed:  4%) loss: 7.4236  acc: 0.3243  lr: 0.0002 
-ep/it:24- 145 niter:  9050  45m 17s (- 883m 1s) completed:  4%) loss: 7.4867  acc: 0.3133  lr: 0.0002 
-ep/it:24- 195 niter:  9100  45m 29s (- 881m 57s) completed:  4%) loss: 7.4737  acc: 0.3229  lr: 0.0002 
-ep/it:24- 245 niter:  9150  45m 42s (- 880m 54s) completed:  4%) loss: 7.4395  acc: 0.3211  lr: 0.0002 
-ep/it:24- 295 niter:  9200  45m 54s (- 879m 52s) completed:  4%) loss: 7.4096  acc: 0.3266  lr: 0.0002 
-ep/it:24- 345 niter:  9250  46m 7s (- 878m 47s) completed:  4%) loss: 7.4562  acc: 0.3204  lr: 0.0002 
-Validation time:
-Validation loss:3.168, accuracy:0.320
-Improved accuracy from 0.32 to 0.3202914304059485!!!
---> 	 Eva. Ep 25 :, FID. 1.0161, Diversity Real. 9.7209, Diversity. 10.1470, R_precision_real. [0.51290761 0.69429348 0.796875  ], R_precision. [0.42459239 0.61209239 0.72282609], matching_score_real. 2.9141674922860186, matching_score_pred. 3.5885798671971196
-ep/it:25-  24 niter:  9300  46m 36s (- 882m 57s) completed:  5%) loss: 7.4830  acc: 0.3173  lr: 0.0002 
-ep/it:25-  74 niter:  9350  46m 48s (- 881m 53s) completed:  5%) loss: 7.5344  acc: 0.3218  lr: 0.0002 
-ep/it:25- 124 niter:  9400  47m 1s (- 880m 50s) completed:  5%) loss: 7.5077  acc: 0.3152  lr: 0.0002 
-ep/it:25- 174 niter:  9450  47m 13s (- 879m 52s) completed:  5%) loss: 7.4583  acc: 0.3234  lr: 0.0002 
-ep/it:25- 224 niter:  9500  47m 26s (- 878m 55s) completed:  5%) loss: 7.4697  acc: 0.3202  lr: 0.0002 
-ep/it:25- 274 niter:  9550  47m 39s (- 878m 8s) completed:  5%) loss: 7.4786  acc: 0.3159  lr: 0.0002 
-ep/it:25- 324 niter:  9600  47m 52s (- 877m 8s) completed:  5%) loss: 7.4055  acc: 0.3249  lr: 0.0002 
-Validation time:
-Validation loss:3.149, accuracy:0.322
-Improved accuracy from 0.32 to 0.32236640738404315!!!
---> 	 Eva. Ep 26 :, FID. 0.8617, Diversity Real. 9.5409, Diversity. 9.8722, R_precision_real. [0.51630435 0.70584239 0.80230978], R_precision. [0.41576087 0.60122283 0.69701087], matching_score_real. 2.9713481146356333, matching_score_pred. 3.6685599606970083

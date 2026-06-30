@@ -1,3 +1,0 @@
-caption1: the man puts the box down and runs
-caption2: this person is running quickly across the space.
-caption3: a person places an object on the ground before running forward.

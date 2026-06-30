@@ -1,3 +1,0 @@
-caption1: a man takes several steps backwards.
-caption2: a person walks backwards and stops.
-caption3: a person walks backwards slowly.

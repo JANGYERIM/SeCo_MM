@@ -1,3 +1,0 @@
-caption1: a person is walking foward.
-caption2: a person slowly walks forward.
-caption3: a person walks forward in a curve line.

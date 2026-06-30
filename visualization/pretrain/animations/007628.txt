@@ -1,3 +1,0 @@
-caption1: person moves forward two steps then does a full turn and faces opposite direction
-caption2: the person work for you turn right and walk back
-caption3: a person takes two steps forward, the pivots on their right foot, turning 180 degrees to the right and returning to their starting point.

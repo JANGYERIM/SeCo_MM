@@ -1,3 +1,0 @@
-caption1: the person walks backwards in a straight line
-caption2: a person walks backward for 3 steps.
-caption3: the man takes 4 steps backwards.

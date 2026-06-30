@@ -1,3 +1,0 @@
-caption1: a man walks in clockwise direction.
-caption2: a person walks around in a circle.
-caption3: a man walks counter clockwise in a circle.
