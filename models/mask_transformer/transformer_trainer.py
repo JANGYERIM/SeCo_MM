@@ -65,7 +65,7 @@ class MaskTransformerTrainer:
         ids_expanded = torch.repeat_interleave(ids, counts, dim=0)
         m_lens_expanded = torch.repeat_interleave(m_lens_vq, counts, dim=0)
 
-        loss, _pred_ids, acc = self.t2m_transformer(
+        loss, _pred_ids, acc, ce_loss, cons_loss = self.t2m_transformer(
             ids_expanded, flat_captions, m_lens_expanded,
             counts=counts,
             lambda_consistency=self.opt.lambda_consistency
@@ -76,7 +76,71 @@ class MaskTransformerTrainer:
         self.opt_t2m_transformer.step()
         self.scheduler.step()
 
-        return loss.item(), acc
+        return loss.item(), acc, ce_loss.item(), cons_loss.item()
+
+    @torch.no_grad()
+    def log_caption_diversity(self, batch_data, epoch, n_motions=5):
+        self.t2m_transformer.eval()
+
+        captions_list, motion, m_lens = batch_data
+        motion = motion.detach().float().to(self.device)
+        m_lens = m_lens.detach().long().to(self.device)
+
+        code_idx, _ = self.vq_model.encode(motion)
+        m_lens_vq = m_lens // 4
+        ids = code_idx[..., 0]
+
+        counts = torch.tensor([len(caps) for caps in captions_list], device=self.device)
+        flat_captions = [cap for caps in captions_list for cap in caps]
+        ids_expanded = torch.repeat_interleave(ids, counts, dim=0)
+        m_lens_expanded = torch.repeat_interleave(m_lens_vq, counts, dim=0)
+
+        *_, logits, mask = self.t2m_transformer(
+            ids_expanded, flat_captions, m_lens_expanded,
+            counts=counts,
+            lambda_consistency=0.0,
+            return_logits=True,
+        )
+        # logits: (sum(counts), vocab, seqlen), mask: (sum(counts), seqlen)
+
+        print(f"\n[Epoch {epoch}] Caption Top-5 Diversity (first masked position)")
+        start = 0
+        for i in range(min(n_motions, len(counts))):
+            k = counts[i].item()
+            mask_i   = mask[start]              # (seqlen,)  — shared across captions
+            logits_i = logits[start:start+k]    # (k, vocab, seqlen)
+
+            masked_pos = mask_i.nonzero(as_tuple=True)[0]
+            if len(masked_pos) == 0:
+                start += k
+                continue
+
+            gt_i = ids[i]  # (seqlen,) GT tokens for this motion
+
+            print(f"  Motion {i}  ({k} captions)")
+            for p_idx, pos_t in enumerate(masked_pos[:3]):
+                pos = pos_t.item()
+                probs    = torch.softmax(logits_i[:, :, pos], dim=-1)  # (k, vocab)
+                top5     = torch.topk(probs, 5, dim=-1).indices         # (k, 5)
+                top5_sets = [set(top5[j].tolist()) for j in range(k)]
+                gt_tok   = gt_i[pos].item()
+
+                print(f"    [masked pos {p_idx+1}={pos}  GT={gt_tok}]")
+                for j in range(k):
+                    t5 = top5[j].tolist()
+                    hit = '*' if gt_tok in t5 else ' '
+                    print(f"      cap{j}{hit}: {t5}")
+
+                if k >= 2:
+                    overlaps = [
+                        len(top5_sets[a] & top5_sets[b])
+                        for a in range(k) for b in range(a+1, k)
+                    ]
+                    print(f"      avg pairwise top5 overlap: {sum(overlaps)/len(overlaps):.2f}/5")
+
+            start += k
+
+        self.t2m_transformer.train()
 
     def save(self, file_name, ep, total_it):
         t2m_trans_state_dict = self.t2m_transformer.state_dict()
@@ -143,12 +207,16 @@ class MaskTransformerTrainer:
             self.vq_model.eval()
 
             for i, batch in enumerate(train_loader):
+                if i == 0:
+                    self.log_caption_diversity(batch, epoch)
                 it += 1
                 if it < self.opt.warm_up_iter:
                     self.update_lr_warm_up(it, self.opt.warm_up_iter, self.opt.lr)
 
-                loss, acc = self.update(batch_data=batch)
+                loss, acc, ce_loss, cons_loss = self.update(batch_data=batch)
                 logs['loss'] += loss
+                logs['ce_loss'] += ce_loss
+                logs['cons_loss'] += cons_loss
                 logs['acc'] += acc
                 logs['lr'] += self.opt_t2m_transformer.param_groups[0]['lr']
 

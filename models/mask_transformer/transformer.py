@@ -239,7 +239,7 @@ class MaskTransformer(nn.Module):
         logits = self.output_process(output) #(seqlen, b, e) -> (b, ntoken, seqlen)
         return logits
 
-    def forward(self, ids, y, m_lens, counts=None, lambda_consistency=0.0):
+    def forward(self, ids, y, m_lens, counts=None, lambda_consistency=0.0, return_logits=False):
         bs, ntokens = ids.shape
         device = ids.device
 
@@ -307,6 +307,28 @@ class MaskTransformer(nn.Module):
         if counts is not None:
             # per-token CE: (bs, seqlen)
             ce_per_token = F.cross_entropy(logits, labels, ignore_index=self.mask_id, reduction='none')
+
+            # ×2 penalty: 모든 캡션이 같은 토큰으로 오답인 위치
+            with torch.no_grad():
+                preds = logits.argmax(dim=1)  # (bs, seqlen)
+                penalty_weight = torch.ones_like(ce_per_token)
+                start_b = 0
+                for k in counts:
+                    k = k.item()
+                    preds_i  = preds[start_b:start_b+k]   # (k, seqlen)
+                    gt_i     = ids[start_b]                # (seqlen,)
+                    mask_i   = mask[start_b]               # (seqlen,)
+                    all_same  = (preds_i == preds_i[0]).all(dim=0)   # (seqlen,)
+                    all_wrong = preds_i[0] != gt_i                    # (seqlen,)
+                    penalty   = (all_same & all_wrong & mask_i)       # (seqlen,)
+                    penalty_weight[start_b:start_b+k] = torch.where(
+                        penalty.unsqueeze(0).expand(k, -1),
+                        torch.full_like(penalty_weight[start_b:start_b+k], 2.0),
+                        penalty_weight[start_b:start_b+k]
+                    )
+                    start_b += k
+            ce_per_token = ce_per_token * penalty_weight
+
             # per-sample mean (토큰 균등)
             ce_per_sample = (ce_per_token * mask.float()).sum(dim=1) / mask.float().sum(dim=1).clamp(min=1)
             # per-motion mean (캡션 간 균등)
@@ -318,50 +340,65 @@ class MaskTransformer(nn.Module):
             acc = (pred_id == labels).masked_select(mask).float().mean().item()
 
             if lambda_consistency > 0:
-                cons_loss = self._consistency_option1(logits, labels, ids, mask, counts)
-                return ce_loss + lambda_consistency * cons_loss, pred_id, acc
-            return ce_loss, pred_id, acc
+                cons_loss = self._consistency_kl(logits, labels, mask, counts)
+                total_loss = ce_loss + lambda_consistency * cons_loss
+                if return_logits:
+                    return total_loss, pred_id, acc, ce_loss, cons_loss, logits, mask
+                return total_loss, pred_id, acc, ce_loss, cons_loss
+            if return_logits:
+                return ce_loss, pred_id, acc, ce_loss, torch.zeros(1, device=device), logits, mask
+            return ce_loss, pred_id, acc, ce_loss, torch.zeros(1, device=device)
         else:
             ce_loss, pred_id, acc = cal_performance(logits, labels, ignore_index=self.mask_id)
             return ce_loss, pred_id, acc
 
-    def _consistency_option1(self, logits, labels, ids, mask, counts):
+    def _consistency_kl(self, logits, labels, mask, counts):
         '''
-        조건1: 모든 캡션이 해당 위치를 GT와 다르게 예측 → +1 가중치
-        조건2: 3개 이상의 캡션이 해당 위치에서 서로 다른 값을 예측 → +1 가중치
-        두 조건은 독립적으로 합산 (둘 다 만족하면 +2)
+        w_i^(t) = P_i(y_gt^(t)) / Σ_j P_j(y_gt^(t))
+        P_teacher^(t) = Σ_i w_i^(t) * P_i^(t)  (detached)
+        Loss = (1/K) Σ_i KL(P_teacher || P_i), masked positions only.
         '''
-        with torch.no_grad():
-            preds = logits.argmax(dim=1)  # (b*K_total, seqlen)
-            cons_weight = torch.zeros_like(mask, dtype=torch.float)
+        kl_total = 0.0
+        n_motions = 0
+        start = 0
+        vocab_size = logits.size(1)
 
-            start = 0
-            for k in counts:
-                k = k.item()
-                preds_i  = preds[start:start+k]  # (K_i, seqlen)
-                gt_i     = ids[start]             # (seqlen)
-                masked   = mask[start]            # (seqlen) — 공유 mask이므로 첫 행과 동일
-
-                # 조건1: 모든 캡션이 GT와 다르게 예측
-                all_wrong = (preds_i != gt_i.unsqueeze(0)).all(dim=0)  # (seqlen)
-
-                # 조건2: 3개 이상의 서로 다른 값 예측
-                if k >= 3:
-                    sorted_preds = preds_i.sort(dim=0).values                        # (K_i, seqlen)
-                    unique_count = (sorted_preds[1:] != sorted_preds[:-1]).sum(dim=0) + 1  # (seqlen)
-                    diverse = unique_count >= 3
-                else:
-                    diverse = torch.zeros(preds_i.shape[1], dtype=torch.bool, device=preds_i.device)
-
-                # all_wrong → +1, all_wrong & diverse → +1 more (총 +2)
-                weight_i = (all_wrong.float() + (all_wrong & diverse).float()) * masked.float()
-                cons_weight[start:start+k] = weight_i.unsqueeze(0).expand(k, -1)
-
+        for k in counts:
+            k = k.item()
+            if k < 2:
                 start += k
+                continue
 
-        ce_per_token = F.cross_entropy(logits, labels, ignore_index=self.mask_id, reduction='none')
-        n = cons_weight.sum().clamp(min=1)
-        return (ce_per_token * cons_weight).sum() / n
+            logits_i = logits[start:start+k]                          # (k, vocab, seqlen)
+            mask_i   = mask[start].float()                             # (seqlen,)
+            y_gt     = labels[start].clamp(0, vocab_size - 1).long()  # (seqlen,)
+
+            probs_i = torch.softmax(logits_i, dim=1)  # (k, vocab, seqlen)
+
+            # w_i^(t) = P_i(y_gt^(t)) / Σ_j P_j(y_gt^(t))
+            gather_idx = y_gt.unsqueeze(0).unsqueeze(0).expand(k, 1, -1)  # (k, 1, seqlen)
+            p_gt = probs_i.gather(1, gather_idx).squeeze(1)                # (k, seqlen)
+            w    = p_gt / p_gt.sum(dim=0, keepdim=True).clamp(min=1e-8)   # (k, seqlen)
+
+            # P_teacher^(t) = Σ_i w_i^(t) * P_i^(t), detach to block gradient
+            P_teacher     = (w.unsqueeze(1) * probs_i).sum(dim=0).detach()  # (vocab, seqlen)
+            log_P_teacher = torch.log(P_teacher + 1e-8)                      # (vocab, seqlen)
+
+            # KL(P_teacher || P_i) for all K captions
+            log_P_i    = F.log_softmax(logits_i, dim=1)                      # (k, vocab, seqlen)
+            kl_per_pos = (P_teacher.unsqueeze(0) *
+                          (log_P_teacher.unsqueeze(0) - log_P_i)).sum(dim=1) # (k, seqlen)
+
+            # masked 위치만, caption 간 평균 후 motion 간 평균
+            n_tokens  = mask_i.sum().clamp(min=1)
+            kl_total += (kl_per_pos * mask_i.unsqueeze(0)).sum(dim=1).div(n_tokens).mean()
+            n_motions += 1
+
+            start += k
+
+        if n_motions == 0:
+            return logits.sum() * 0.0
+        return kl_total / n_motions
         
     def forward_with_cond_scale(self,
                                 motion_ids,
