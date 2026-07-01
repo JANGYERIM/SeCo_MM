@@ -393,7 +393,8 @@ class MaskTransformer(nn.Module):
                  temperature=1,
                  topk_filter_thres=0.9,
                  gsample=False,
-                 force_mask=False
+                 force_mask=False,
+                 memory_lambda=0.0,
                  ):
         # print(self.opt.num_quantizers)
         # assert len(timesteps) >= len(cond_scales) == self.opt.num_quantizers
@@ -419,6 +420,7 @@ class MaskTransformer(nn.Module):
         ids = torch.where(padding_mask, self.pad_id, self.mask_id)
         scores = torch.where(padding_mask, 1e5, 0.)
         starting_temperature = temperature
+        prev_probs = None
 
         for timestep, steps_until_x0 in zip(torch.linspace(0, 1, timesteps, device=device), reversed(range(timesteps))):
             # 0 < timestep < 1
@@ -447,32 +449,26 @@ class MaskTransformer(nn.Module):
                                                   force_mask=force_mask)
 
             logits = logits.permute(0, 2, 1)  # (b, seqlen, ntoken)
-            # print(logits.shape, self.opt.num_tokens)
+
+            if prev_probs is not None and memory_lambda > 0:
+                curr_probs = torch.softmax(logits, dim=-1)
+                blended    = (1 - memory_lambda) * curr_probs + memory_lambda * prev_probs
+                logits     = torch.log(blended + 1e-8)
+            prev_probs = torch.softmax(logits, dim=-1)
+
             # clean low prob token
             filtered_logits = top_k(logits, topk_filter_thres, dim=-1)
 
             '''
             Update ids
             '''
-            # if force_mask:
             temperature = starting_temperature
-            # else:
-            # temperature = starting_temperature * (steps_until_x0 / timesteps)
-            # temperature = max(temperature, 1e-4)
-            # print(filtered_logits.shape)
-            # temperature is annealed, gradually reducing temperature as well as randomness
             if gsample:  # use gumbel_softmax sampling
-                # print("1111")
                 pred_ids = gumbel_sample(filtered_logits, temperature=temperature, dim=-1)  # (b, seqlen)
             else:  # use multinomial sampling
-                # print("2222")
                 probs = F.softmax(filtered_logits / temperature, dim=-1)  # (b, seqlen, ntoken)
-                # print(temperature, starting_temperature, steps_until_x0, timesteps)
-                # print(probs / temperature)
                 pred_ids = Categorical(probs).sample()  # (b, seqlen)
 
-            # print(pred_ids.max(), pred_ids.min())
-            # if pred_ids.
             ids = torch.where(is_mask, pred_ids, ids)
 
             '''
@@ -486,7 +482,6 @@ class MaskTransformer(nn.Module):
             scores = scores.masked_fill(~is_mask, 1e5)
 
         ids = torch.where(padding_mask, -1, ids)
-        # print("Final", ids.max(), ids.min())
         return ids
 
 

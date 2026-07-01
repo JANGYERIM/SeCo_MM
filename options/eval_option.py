@@ -19,6 +19,8 @@ class EvalT2MOptions(BaseOptions):
                                  help="Filter out percentil low prop entries.")
         self.parser.add_argument("--time_steps", default=18, type=int,
                                  help="Mask Generate steps.")
+        self.parser.add_argument("--memory_lambda", default=0.0, type=float,
+                                 help="Memory blend weight for iterative decoding (0.0 = disabled).")
         self.parser.add_argument("--seed", default=10107, type=int)
 
         self.parser.add_argument('--gumbel_sample', action="store_true", help='True: gumbel sampling, False: categorical sampling.')

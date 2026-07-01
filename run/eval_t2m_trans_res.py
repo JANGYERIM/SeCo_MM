@@ -164,7 +164,8 @@ if __name__ == '__main__':
                                                                        i, eval_wrapper=eval_wrapper,
                                                          time_steps=opt.time_steps, cond_scale=opt.cond_scale,
                                                          temperature=opt.temperature, topkr=opt.topkr,
-                                                                       force_mask=opt.force_mask, cal_mm=True)
+                                                                       force_mask=opt.force_mask, cal_mm=True,
+                                                                       memory_lambda=opt.memory_lambda)
             fid.append(best_fid)
             div.append(best_div)
             top1.append(Rprecision[0])

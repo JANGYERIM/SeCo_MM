@@ -792,7 +792,7 @@ def evaluation_res_transformer_plus_l1(val_loader, vq_model, trans, repeat_id, e
 
 @torch.no_grad()
 def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eval_wrapper,
-                                time_steps, cond_scale, temperature, topkr, gsample=True, force_mask=False, cal_mm=True):
+                                time_steps, cond_scale, temperature, topkr, gsample=True, force_mask=False, cal_mm=True, memory_lambda=0.0):
     trans.eval()
     vq_model.eval()
 
@@ -826,7 +826,8 @@ def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eva
             for _ in range(30):
                 mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                       temperature=temperature, topk_filter_thres=topkr,
-                                      gsample=gsample, force_mask=force_mask)
+                                      gsample=gsample, force_mask=force_mask,
+                                      memory_lambda=memory_lambda)
 
                 # motion_codes = motion_codes.permute(0, 2, 1)
                 mids.unsqueeze_(-1)
@@ -841,7 +842,7 @@ def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eva
         else:
             mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                   temperature=temperature, topk_filter_thres=topkr,
-                                  force_mask=force_mask)
+                                  force_mask=force_mask, memory_lambda=memory_lambda)
 
             # motion_codes = motion_codes.permute(0, 2, 1)
             mids.unsqueeze_(-1)
@@ -900,7 +901,7 @@ def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eva
 @torch.no_grad()
 def evaluation_mask_transformer_test_plus_res(val_loader, vq_model, res_model, trans, repeat_id, eval_wrapper,
                                 time_steps, cond_scale, temperature, topkr, gsample=True, force_mask=False,
-                                              cal_mm=True, res_cond_scale=5):
+                                              cal_mm=True, res_cond_scale=5, memory_lambda=0.0):
     trans.eval()
     vq_model.eval()
     res_model.eval()
@@ -934,29 +935,24 @@ def evaluation_mask_transformer_test_plus_res(val_loader, vq_model, res_model, t
             for _ in range(30):
                 mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                       temperature=temperature, topk_filter_thres=topkr,
-                                      gsample=gsample, force_mask=force_mask)
+                                      gsample=gsample, force_mask=force_mask,
+                                      memory_lambda=memory_lambda)
 
                 # motion_codes = motion_codes.permute(0, 2, 1)
                 # mids.unsqueeze_(-1)
                 pred_ids = res_model.generate(mids, clip_text, m_length // 4, temperature=1, cond_scale=res_cond_scale)
-                # pred_codes = trans(code_indices[..., 0], clip_text, m_length//4, force_mask=force_mask)
-                # pred_ids = torch.where(pred_ids==-1, 0, pred_ids)
 
                 pred_motions = vq_model.forward_decoder(pred_ids)
 
-                # pred_motions = vq_model.decoder(codes)
-                # pred_motions = vq_model.forward_decoder(mids)
-
                 et_pred, em_pred = eval_wrapper.get_co_embeddings(word_embeddings, pos_one_hots, sent_len, pred_motions.clone(),
                                                                   m_length)
-                # em_pred = em_pred.unsqueeze(1)  #(bs, 1, d)
                 motion_multimodality_batch.append(em_pred.unsqueeze(1))
             motion_multimodality_batch = torch.cat(motion_multimodality_batch, dim=1) #(bs, 30, d)
             motion_multimodality.append(motion_multimodality_batch)
         else:
             mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                   temperature=temperature, topk_filter_thres=topkr,
-                                  force_mask=force_mask)
+                                  force_mask=force_mask, memory_lambda=memory_lambda)
 
             # motion_codes = motion_codes.permute(0, 2, 1)
             # mids.unsqueeze_(-1)
