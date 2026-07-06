@@ -207,20 +207,20 @@ class MaskTransformer(nn.Module):
         else:
             return cond
 
-    def trans_forward(self, motion_ids, cond, padding_mask, force_mask=False):
+    def trans_forward(self, motion_ids, cond, padding_mask, force_mask=False, x_emb=None):
         '''
         :param motion_ids: (b, seqlen)
         :padding_mask: (b, seqlen), all pad positions are TRUE else FALSE
         :param cond: (b, embed_dim) for text, (b, num_actions) for action
         :param force_mask: boolean
+        :param x_emb: (b, seqlen, code_dim) optional pre-computed embeddings (soft pass)
         :return:
             -logits: (b, num_token, seqlen)
         '''
 
         cond = self.mask_cond(cond, force_mask=force_mask)
 
-        # print(motion_ids.shape)
-        x = self.token_emb(motion_ids)
+        x = self.token_emb(motion_ids) if x_emb is None else x_emb
         # print(x.shape)
         # (b, seqlen, d) -> (seqlen, b, latent_dim)
         x = self.input_process(x)
@@ -239,7 +239,7 @@ class MaskTransformer(nn.Module):
         logits = self.output_process(output) #(seqlen, b, e) -> (b, ntoken, seqlen)
         return logits
 
-    def forward(self, ids, y, m_lens, counts=None, lambda_consistency=0.0):
+    def forward(self, ids, y, m_lens, counts=None, lambda_consistency=0.0, log_top5=False):
         bs, ntokens = ids.shape
         device = ids.device
 
@@ -317,6 +317,15 @@ class MaskTransformer(nn.Module):
             pred_id = logits.argmax(dim=1)
             acc = (pred_id == labels).masked_select(mask).float().mean().item()
 
+            if self.training:
+                ce_p2, logits_p2, still_masked, confirmed = self._soft_pass(
+                    logits, x_ids, ids, mask, cond_vector, non_pad_mask, force_mask,
+                    rand_mask_probs, counts)
+                ce_loss = (ce_loss + ce_p2) / 2
+                if log_top5:
+                    self._print_top5(logits,    mask,         ids, counts, tag='Pass1')
+                    self._print_top5(logits_p2, still_masked, ids, counts, tag='Pass2', confirmed_mask=confirmed)
+
             if lambda_consistency > 0:
                 cons_loss = self._consistency_option1(logits, labels, ids, mask, counts)
                 return ce_loss + lambda_consistency * cons_loss, pred_id, acc
@@ -324,6 +333,96 @@ class MaskTransformer(nn.Module):
         else:
             ce_loss, pred_id, acc = cal_performance(logits, labels, ignore_index=self.mask_id)
             return ce_loss, pred_id, acc
+
+    def _soft_pass(self, logits_p1, x_ids, ids, mask, cond_vector, non_pad_mask, force_mask,
+                   rand_mask_probs, counts):
+        '''
+        Pass 1에서 cosine schedule 비율(1 - rand_mask_probs)만큼 masked 토큰을 확정 →
+        soft embedding(prob-weighted token_emb)으로 교체 후 Pass 2 forward.
+        나머지 masked 위치에 대한 CE loss 반환.
+        - rand_mask_probs 클수록(초반) 확정 적음 / 작을수록(후반) 확정 많음
+        '''
+        # Pass 1 분포 (detach: Pass 2 gradient가 Pass 1으로 흐르지 않도록)
+        probs_p1 = torch.softmax(logits_p1, dim=1).detach()       # (bs, vocab, seqlen)
+        max_conf = probs_p1.max(dim=1).values                      # (bs, seqlen)
+
+        # rand_mask_probs: (b,) per motion → (bs,) per sample
+        rmp_expanded = torch.repeat_interleave(rand_mask_probs, counts)  # (bs,)
+
+        # masked 위치 중 (1 - rand_mask_probs) 비율을 확정
+        n_masked  = mask.sum(dim=1)                                # (bs,)
+        n_confirm = (n_masked.float() * (1 - rmp_expanded)).round().long()  # (bs,)
+
+        conf_masked = max_conf.masked_fill(~mask, -1e9)            # (bs, seqlen)
+        # n_confirm번째 confidence 값을 threshold로 사용
+        sorted_conf, _ = conf_masked.sort(dim=1, descending=True)
+        threshold = sorted_conf.gather(
+            1, n_confirm.clamp(min=1).sub(1).unsqueeze(1)
+        )                                                           # (bs, 1)
+        confirmed    = (conf_masked >= threshold) & mask           # (bs, seqlen)
+        still_masked = mask & ~confirmed                           # (bs, seqlen)
+
+        # soft embedding: probs @ token_emb_weight
+        token_emb_w = self.token_emb.weight[:self.opt.num_tokens]  # (num_tokens, code_dim)
+        probs_vocab  = probs_p1[:, :self.opt.num_tokens, :].permute(0, 2, 1)  # (bs, seqlen, num_tokens)
+        soft_embs    = probs_vocab @ token_emb_w                   # (bs, seqlen, code_dim)
+
+        # 확정 위치만 soft embedding으로 교체, 나머지는 hard embedding 유지
+        hard_emb = self.token_emb(x_ids)                          # (bs, seqlen, code_dim)
+        x_emb_p2 = torch.where(
+            confirmed.unsqueeze(-1).expand_as(hard_emb),
+            soft_embs,
+            hard_emb
+        )
+
+        # Pass 2 forward
+        logits_p2  = self.trans_forward(x_ids, cond_vector, ~non_pad_mask, force_mask, x_emb=x_emb_p2)
+        labels_p2  = torch.where(still_masked, ids, self.mask_id)
+        ce_p2      = F.cross_entropy(logits_p2, labels_p2, ignore_index=self.mask_id, reduction='mean')
+        return ce_p2, logits_p2, still_masked, confirmed
+
+    def _print_top5(self, logits, mask, ids, counts, tag='Pass', confirmed_mask=None):
+        '''
+        배치 내 최대 5개 모션의 첫 3개 masked 위치에 대해 GT + top-5 예측 토큰 출력.
+        confirmed_mask가 주어지면 해당 위치(soft로 넘긴 것) 3개를 먼저 출력한 뒤
+        mask 위치(still-masked) 3개를 출력 → Pass2에서 총 최대 6개.
+        '''
+        b = len(counts)
+        n_show = min(5, b)
+        start_indices = torch.zeros(b, dtype=torch.long, device=logits.device)
+        if b > 1:
+            start_indices[1:] = counts[:-1].cumsum(0)
+
+        print(f'\n[{tag}]')
+        for motion_i in range(n_show):
+            row        = start_indices[motion_i].item()
+            logits_row = logits[row]                   # (vocab, seqlen)
+            gt_row     = ids[row]                      # (seqlen,)
+
+            def fmt_top5(top5, gt):
+                tokens = [f'{t}{"*" if t == gt else ""}' for t in top5]
+                return '[' + ', '.join(tokens) + ']'
+
+            # confirmed(soft) 위치 먼저
+            if confirmed_mask is not None:
+                conf_pos = confirmed_mask[row].nonzero(as_tuple=False).squeeze(1)
+                for pos in conf_pos[:3]:
+                    pos = pos.item()
+                    gt_tok = gt_row[pos].item()
+                    top5   = logits_row[:, pos].topk(5).indices.tolist()
+                    print(f'  motion {motion_i} pos {pos:3d} [soft ] | GT={gt_tok:4d} | top5={fmt_top5(top5, gt_tok)}')
+
+            # still-masked 위치
+            mask_pos = mask[row].nonzero(as_tuple=False).squeeze(1)
+            if mask_pos.numel() == 0:
+                print(f'  motion {motion_i}: no target positions')
+                continue
+            label = 'pred ' if confirmed_mask is not None else 'masked'
+            for pos in mask_pos[:3]:
+                pos = pos.item()
+                gt_tok = gt_row[pos].item()
+                top5   = logits_row[:, pos].topk(5).indices.tolist()
+                print(f'  motion {motion_i} pos {pos:3d} [{label}] | GT={gt_tok:4d} | top5={fmt_top5(top5, gt_tok)}')
 
     def _consistency_option1(self, logits, labels, ids, mask, counts):
         '''
@@ -368,17 +467,18 @@ class MaskTransformer(nn.Module):
                                 cond_vector,
                                 padding_mask,
                                 cond_scale=3,
-                                force_mask=False):
+                                force_mask=False,
+                                x_emb=None):
         # bs = motion_ids.shape[0]
         # if cond_scale == 1:
         if force_mask:
-            return self.trans_forward(motion_ids, cond_vector, padding_mask, force_mask=True)
+            return self.trans_forward(motion_ids, cond_vector, padding_mask, force_mask=True, x_emb=x_emb)
 
-        logits = self.trans_forward(motion_ids, cond_vector, padding_mask)
+        logits = self.trans_forward(motion_ids, cond_vector, padding_mask, x_emb=x_emb)
         if cond_scale == 1:
             return logits
 
-        aux_logits = self.trans_forward(motion_ids, cond_vector, padding_mask, force_mask=True)
+        aux_logits = self.trans_forward(motion_ids, cond_vector, padding_mask, force_mask=True, x_emb=x_emb)
 
         scaled_logits = aux_logits + (logits - aux_logits) * cond_scale
         return scaled_logits
@@ -395,6 +495,7 @@ class MaskTransformer(nn.Module):
                  gsample=False,
                  force_mask=False,
                  memory_lambda=0.0,
+                 use_soft_emb=False,
                  ):
         # print(self.opt.num_quantizers)
         # assert len(timesteps) >= len(cond_scales) == self.opt.num_quantizers
@@ -421,6 +522,11 @@ class MaskTransformer(nn.Module):
         scores = torch.where(padding_mask, 1e5, 0.)
         starting_temperature = temperature
         prev_probs = None
+        # (b, seqlen, num_tokens) probability distribution of the last confirmed
+        # prediction for each position, used to build soft embeddings for tokens
+        # that are no longer masked (i.e. already decided in a previous step).
+        conf_probs = None
+        token_emb_w = self.token_emb.weight[:self.opt.num_tokens]  # (num_tokens, code_dim)
 
         for timestep, steps_until_x0 in zip(torch.linspace(0, 1, timesteps, device=device), reversed(range(timesteps))):
             # 0 < timestep < 1
@@ -442,11 +548,21 @@ class MaskTransformer(nn.Module):
             '''
             Preparing input
             '''
+            x_emb = None
+            if use_soft_emb and conf_probs is not None:
+                # already-confirmed (non-pad, non-remasked) positions get a
+                # confidence-weighted soft embedding instead of the hard token embedding
+                soft_embs = conf_probs @ token_emb_w                    # (b, seqlen, code_dim)
+                hard_emb = self.token_emb(ids)                          # (b, seqlen, code_dim)
+                confirmed = (~is_mask) & (~padding_mask)
+                x_emb = torch.where(confirmed.unsqueeze(-1), soft_embs, hard_emb)
+
             # (b, num_token, seqlen)
             logits = self.forward_with_cond_scale(ids, cond_vector=cond_vector,
                                                   padding_mask=padding_mask,
                                                   cond_scale=cond_scale,
-                                                  force_mask=force_mask)
+                                                  force_mask=force_mask,
+                                                  x_emb=x_emb)
 
             logits = logits.permute(0, 2, 1)  # (b, seqlen, ntoken)
 
@@ -477,6 +593,14 @@ class MaskTransformer(nn.Module):
             probs_without_temperature = logits.softmax(dim=-1)  # (b, seqlen, ntoken)
             scores = probs_without_temperature.gather(2, pred_ids.unsqueeze(dim=-1))  # (b, seqlen, 1)
             scores = scores.squeeze(-1)  # (b, seqlen)
+
+            if use_soft_emb:
+                if conf_probs is None:
+                    conf_probs = torch.zeros(batch_size, seq_len, self.opt.num_tokens, device=device)
+                # record the distribution for positions decided this step, for use as
+                # soft embedding input once they stop being remasked
+                conf_probs = torch.where(
+                    is_mask.unsqueeze(-1), probs_without_temperature[..., :self.opt.num_tokens], conf_probs)
 
             # We do not want to re-mask the previously kept tokens, or pad tokens
             scores = scores.masked_fill(~is_mask, 1e5)

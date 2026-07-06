@@ -792,7 +792,7 @@ def evaluation_res_transformer_plus_l1(val_loader, vq_model, trans, repeat_id, e
 
 @torch.no_grad()
 def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eval_wrapper,
-                                time_steps, cond_scale, temperature, topkr, gsample=True, force_mask=False, cal_mm=True, memory_lambda=0.0):
+                                time_steps, cond_scale, temperature, topkr, gsample=True, force_mask=False, cal_mm=True, memory_lambda=0.0, use_soft_emb=False):
     trans.eval()
     vq_model.eval()
 
@@ -827,7 +827,7 @@ def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eva
                 mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                       temperature=temperature, topk_filter_thres=topkr,
                                       gsample=gsample, force_mask=force_mask,
-                                      memory_lambda=memory_lambda)
+                                      memory_lambda=memory_lambda, use_soft_emb=use_soft_emb)
 
                 # motion_codes = motion_codes.permute(0, 2, 1)
                 mids.unsqueeze_(-1)
@@ -842,7 +842,7 @@ def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eva
         else:
             mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                   temperature=temperature, topk_filter_thres=topkr,
-                                  force_mask=force_mask, memory_lambda=memory_lambda)
+                                  force_mask=force_mask, memory_lambda=memory_lambda, use_soft_emb=use_soft_emb)
 
             # motion_codes = motion_codes.permute(0, 2, 1)
             mids.unsqueeze_(-1)
@@ -901,7 +901,7 @@ def evaluation_mask_transformer_test(val_loader, vq_model, trans, repeat_id, eva
 @torch.no_grad()
 def evaluation_mask_transformer_test_plus_res(val_loader, vq_model, res_model, trans, repeat_id, eval_wrapper,
                                 time_steps, cond_scale, temperature, topkr, gsample=True, force_mask=False,
-                                              cal_mm=True, res_cond_scale=5, memory_lambda=0.0):
+                                              cal_mm=True, res_cond_scale=5, memory_lambda=0.0, use_soft_emb=False):
     trans.eval()
     vq_model.eval()
     res_model.eval()
@@ -936,7 +936,7 @@ def evaluation_mask_transformer_test_plus_res(val_loader, vq_model, res_model, t
                 mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                       temperature=temperature, topk_filter_thres=topkr,
                                       gsample=gsample, force_mask=force_mask,
-                                      memory_lambda=memory_lambda)
+                                      memory_lambda=memory_lambda, use_soft_emb=use_soft_emb)
 
                 # motion_codes = motion_codes.permute(0, 2, 1)
                 # mids.unsqueeze_(-1)
@@ -952,7 +952,7 @@ def evaluation_mask_transformer_test_plus_res(val_loader, vq_model, res_model, t
         else:
             mids = trans.generate(clip_text, m_length // 4, time_steps, cond_scale,
                                   temperature=temperature, topk_filter_thres=topkr,
-                                  force_mask=force_mask, memory_lambda=memory_lambda)
+                                  force_mask=force_mask, memory_lambda=memory_lambda, use_soft_emb=use_soft_emb)
 
             # motion_codes = motion_codes.permute(0, 2, 1)
             # mids.unsqueeze_(-1)
@@ -1011,3 +1011,114 @@ def evaluation_mask_transformer_test_plus_res(val_loader, vq_model, res_model, t
           f"multimodality. {multimodality:.4f}"
     print(msg)
     return fid, diversity, R_precision, matching_score_pred, multimodality
+
+
+@torch.no_grad()
+def evaluate_cross_caption_consistency(dataset, vq_model, res_model, trans,
+                                       time_steps, cond_scale, temperature, topkr,
+                                       repeat_id=0, res_cond_scale=5, feat_bias=5, min_captions=2,
+                                       max_ids=None, batch_size=32, device='cuda'):
+    """Cross-Caption Error (CCE): how similar are the motions generated
+    from different captions that describe the same ground-truth motion.
+
+    dataset.mean / dataset.std are the feat_bias-weighted normalization stats
+    used by the models (see MotionDataset.__init__ in data/t2m_dataset.py).
+    Root (dims 0:4) and foot contact (dims -4:) had their std divided by
+    feat_bias, so we reconstruct the un-weighted std to get a fair, plain
+    z-score distance for CCE-Pose.
+
+    Motion ids are packed into batches of up to `batch_size` captions (not
+    ids) so multiple ids are generated together on the GPU in one shot,
+    instead of one id at a time. Pairwise errors are first averaged within
+    each motion id, then averaged across ids, so ids with more captions
+    don't get more weight than ids with fewer captions.
+    """
+    trans.eval()
+    vq_model.eval()
+    res_model.eval()
+
+    mean = torch.from_numpy(dataset.mean).float().to(device)
+    std = torch.from_numpy(dataset.std).float().to(device)
+
+    raw_std = std.clone()
+    raw_std[0:4] = std[0:4] * feat_bias
+    raw_std[-4:] = std[-4:] * feat_bias
+
+    ids = dataset.name_list[dataset.pointer:]
+    if max_ids is not None:
+        ids = ids[:max_ids]
+
+    valid_items = []
+    for name in ids:
+        data = dataset.data_dict[name]
+        text_list = data['text']
+        if len(text_list) < min_captions:
+            continue
+
+        m_length = data['length']
+        m_length = (m_length // dataset.opt.unit_length) * dataset.opt.unit_length
+        if m_length <= 0:
+            continue
+
+        captions = [t['caption'] for t in text_list]
+        valid_items.append((captions, m_length))
+
+    id_pose_errors = []
+    id_contact_errors = []
+    num_pairs = 0
+
+    idx = 0
+    while idx < len(valid_items):
+        batch_captions = []
+        batch_m_lengths = []
+        boundaries = []  # (start, end, m_length) into the flattened batch, per motion id
+        cur_count = 0
+        while idx < len(valid_items) and (cur_count == 0 or cur_count < batch_size):
+            captions, m_length = valid_items[idx]
+            n_cap = len(captions)
+            batch_captions.extend(captions)
+            batch_m_lengths.extend([m_length] * n_cap)
+            boundaries.append((cur_count, cur_count + n_cap, m_length))
+            cur_count += n_cap
+            idx += 1
+
+        m_length_t = torch.LongTensor(batch_m_lengths).to(device)
+
+        mids = trans.generate(batch_captions, m_length_t // 4, time_steps, cond_scale,
+                              temperature=temperature, topk_filter_thres=topkr)
+        pred_ids = res_model.generate(mids, batch_captions, m_length_t // 4, temperature=1,
+                                      cond_scale=res_cond_scale)
+        pred_motions = vq_model.forward_decoder(pred_ids)  # (batch, T, 263), feat_bias-normalized
+
+        # back to raw joint_vecs scale
+        raw_motions = pred_motions * std + mean
+
+        for start, end, m_length in boundaries:
+            motions = raw_motions[start:end, :m_length]  # drop padding beyond this id's length
+
+            pose_part = motions[..., :-4]
+            contact_part = motions[..., -4:]
+
+            pose_norm = (pose_part - mean[:-4]) / raw_std[:-4]  # plain (non feat_bias) z-score
+            contact_bin = (contact_part > 0.5).float()
+
+            n_cap = end - start
+            pair_pose_errors = []
+            pair_contact_errors = []
+            for i in range(n_cap):
+                for j in range(i + 1, n_cap):
+                    pair_pose_errors.append(torch.mean((pose_norm[i] - pose_norm[j]) ** 2).item())
+                    pair_contact_errors.append(torch.mean((contact_bin[i] != contact_bin[j]).float()).item())
+
+            num_pairs += len(pair_pose_errors)
+            id_pose_errors.append(float(np.mean(pair_pose_errors)))
+            id_contact_errors.append(float(np.mean(pair_contact_errors)))
+
+    cce_pose = float(np.mean(id_pose_errors)) if id_pose_errors else float('nan')
+    cce_contact = float(np.mean(id_contact_errors)) if id_contact_errors else float('nan')
+
+    msg = f"--> \t Eva. Repeat {repeat_id} :, CCE-Pose (MSE, lower better). {cce_pose:.4f}, " \
+          f"CCE-Contact (error rate, lower better). {cce_contact:.4f}, " \
+          f"num_ids. {len(id_pose_errors)}, num_pairs. {num_pairs}"
+    print(msg)
+    return cce_pose, cce_contact, len(id_pose_errors)

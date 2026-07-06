@@ -50,7 +50,7 @@ class MaskTransformerTrainer:
 
         return _loss, _acc
 
-    def update(self, batch_data):
+    def update(self, batch_data, it=0):
         captions_list, motion, m_lens = batch_data
         motion = motion.detach().float().to(self.device)
         m_lens = m_lens.detach().long().to(self.device)
@@ -65,10 +65,13 @@ class MaskTransformerTrainer:
         ids_expanded = torch.repeat_interleave(ids, counts, dim=0)
         m_lens_expanded = torch.repeat_interleave(m_lens_vq, counts, dim=0)
 
+        log_top5 = (it % self.opt.log_every == 0)
+
         loss, _pred_ids, acc = self.t2m_transformer(
             ids_expanded, flat_captions, m_lens_expanded,
             counts=counts,
-            lambda_consistency=self.opt.lambda_consistency
+            lambda_consistency=self.opt.lambda_consistency,
+            log_top5=log_top5
         )
 
         self.opt_t2m_transformer.zero_grad()
@@ -147,7 +150,7 @@ class MaskTransformerTrainer:
                 if it < self.opt.warm_up_iter:
                     self.update_lr_warm_up(it, self.opt.warm_up_iter, self.opt.lr)
 
-                loss, acc = self.update(batch_data=batch)
+                loss, acc = self.update(batch_data=batch, it=it)
                 logs['loss'] += loss
                 logs['acc'] += acc
                 logs['lr'] += self.opt_t2m_transformer.param_groups[0]['lr']

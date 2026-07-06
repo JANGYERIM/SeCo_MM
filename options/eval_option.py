@@ -21,6 +21,9 @@ class EvalT2MOptions(BaseOptions):
                                  help="Mask Generate steps.")
         self.parser.add_argument("--memory_lambda", default=0.0, type=float,
                                  help="Memory blend weight for iterative decoding (0.0 = disabled).")
+        self.parser.add_argument('--use_soft_emb', action="store_true",
+                                 help='Feed already-confirmed tokens back as confidence-weighted soft '
+                                      'embeddings instead of hard token embeddings during iterative decoding.')
         self.parser.add_argument("--seed", default=10107, type=int)
 
         self.parser.add_argument('--gumbel_sample', action="store_true", help='True: gumbel sampling, False: categorical sampling.')
