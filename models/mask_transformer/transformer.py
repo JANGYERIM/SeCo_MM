@@ -239,11 +239,14 @@ class MaskTransformer(nn.Module):
         logits = self.output_process(output) #(seqlen, b, e) -> (b, ntoken, seqlen)
         return logits
 
-    def forward(self, ids, y, m_lens):
+    def forward(self, ids, y, m_lens, vq_model=None, motion=None, all_codes=None):
         '''
         :param ids: (b, n)
         :param y: raw text for cond_mode=text, (b, ) for cond_mode=action
         :m_lens: (b,)
+        :param vq_model, motion, all_codes: optional, enable the raw-motion
+            "real-world simulator" feedback loss, weighted by self.opt.lambda_feedback
+            (see feedback_loss in tools.py)
         :return:
         '''
 
@@ -301,7 +304,14 @@ class MaskTransformer(nn.Module):
         logits = self.trans_forward(x_ids, cond_vector, ~non_pad_mask, force_mask)
         ce_loss, pred_id, acc = cal_performance(logits, labels, ignore_index=self.mask_id)
 
-        return ce_loss, pred_id, acc
+        if vq_model is not None and self.opt.lambda_feedback > 0:
+            fb_loss, L_rec, L_pos = feedback_loss(vq_model, logits, mask, all_codes, motion,
+                                                  self.opt.unit_length, self.opt.joints_num)
+            log_dict = {'ce_loss': ce_loss.item(), 'fb_loss': fb_loss.item(),
+                       'L_rec': L_rec.item(), 'L_pos': L_pos.item()}
+            return ce_loss + self.opt.lambda_feedback * fb_loss, pred_id, acc, log_dict
+
+        return ce_loss, pred_id, acc, {'ce_loss': ce_loss.item()}
 
     def forward_with_cond_scale(self,
                                 motion_ids,

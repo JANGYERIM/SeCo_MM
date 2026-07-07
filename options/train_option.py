@@ -19,6 +19,10 @@ class TrainT2MOptions(BaseOptions):
         self.parser.add_argument('--cond_drop_prob', type=float, default=0.1, help='Drop ratio of condition, for classifier-free guidance')
         self.parser.add_argument("--seed", default=3407, type=int, help="Seed")
 
+        '''Feedback module'''
+        self.parser.add_argument('--lambda_feedback', type=float, default=0.0,
+                            help='Weight for the raw-motion-space feedback loss (decode predicted tokens with the frozen VQ decoder and compare to GT motion). 0 disables it.')
+
         self.parser.add_argument('--is_continue', action="store_true", help='Is this trial continuing previous state?')
         self.parser.add_argument('--gumbel_sample', action="store_true", help='Strategy for token sampling, True: Gumbel sampling, False: Categorical sampling')
         self.parser.add_argument('--share_weight', action="store_true", help='Whether to share weight for projection/embedding, for residual transformer.')

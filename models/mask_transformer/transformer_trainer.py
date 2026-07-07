@@ -21,6 +21,10 @@ class MaskTransformerTrainer:
         self.vq_model = vq_model
         self.device = args.device
         self.vq_model.eval()
+        # vq_model stays fully frozen: the feedback module runs its decoder forward
+        # (to get gradients back into t2m_transformer) but must never update its weights
+        for p in self.vq_model.parameters():
+            p.requires_grad_(False)
 
         if args.is_train:
             self.logger = SummaryWriter(args.log_dir)
@@ -41,29 +45,30 @@ class MaskTransformerTrainer:
         motion = motion.detach().float().to(self.device)
         m_lens = m_lens.detach().long().to(self.device)
 
-        # (b, n, q)
-        code_idx, _ = self.vq_model.encode(motion)
-        m_lens = m_lens // 4
+        # (b, n, q), (q, b, code_dim, n)
+        code_idx, all_codes = self.vq_model.encode(motion)
+        m_lens = m_lens // self.opt.unit_length
 
         conds = conds.to(self.device).float() if torch.is_tensor(conds) else conds
 
-        # loss_dict = {}
-        # self.pred_ids = []
-        # self.acc = []
+        # vq_model/motion/all_codes: enables the feedback module inside t2m_transformer.forward()
+        # (gated by self.opt.lambda_feedback there, so this is a no-op when it's 0)
+        _loss, _pred_ids, _acc, _log = self.t2m_transformer(
+            code_idx[..., 0], conds, m_lens,
+            vq_model=self.vq_model, motion=motion, all_codes=all_codes
+        )
 
-        _loss, _pred_ids, _acc = self.t2m_transformer(code_idx[..., 0], conds, m_lens)
-
-        return _loss, _acc
+        return _loss, _acc, _log
 
     def update(self, batch_data):
-        loss, acc = self.forward(batch_data)
+        loss, acc, log_dict = self.forward(batch_data)
 
         self.opt_t2m_transformer.zero_grad()
         loss.backward()
         self.opt_t2m_transformer.step()
         self.scheduler.step()
 
-        return loss.item(), acc
+        return loss.item(), acc, log_dict
 
     def save(self, file_name, ep, total_it):
         t2m_trans_state_dict = self.t2m_transformer.state_dict()
@@ -134,10 +139,12 @@ class MaskTransformerTrainer:
                 if it < self.opt.warm_up_iter:
                     self.update_lr_warm_up(it, self.opt.warm_up_iter, self.opt.lr)
 
-                loss, acc = self.update(batch_data=batch)
+                loss, acc, log_dict = self.update(batch_data=batch)
                 logs['loss'] += loss
                 logs['acc'] += acc
                 logs['lr'] += self.opt_t2m_transformer.param_groups[0]['lr']
+                for tag, value in log_dict.items():
+                    logs[tag] += value
 
                 if it % self.opt.log_every == 0:
                     mean_loss = OrderedDict()
@@ -163,7 +170,7 @@ class MaskTransformerTrainer:
             val_acc = []
             with torch.no_grad():
                 for i, batch_data in enumerate(val_loader):
-                    loss, acc = self.forward(batch_data)
+                    loss, acc, _ = self.forward(batch_data)
                     val_loss.append(loss.item())
                     val_acc.append(acc)
 

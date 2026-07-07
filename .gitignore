@@ -2,3 +2,13 @@
 checkpoints
 editing
 generation
+
+# logs & tensorboard events
+log/
+logs/
+
+# visualization outputs
+visualization/pretrain/
+
+# slurm outputs
+*.out

@@ -144,6 +144,56 @@ def cal_performance(pred, labels, ignore_index=None, smoothing=0., tk=1):
     return loss, pred_id, acc
 
 
+def feedback_loss(vq_model, logits, mask, all_codes, motion, unit_length, joints_num):
+    '''
+    "Real-world simulator" feedback: decode the predicted base-layer tokens back into
+    raw motion space with the frozen VQ decoder, and compare against GT motion only at
+    the frames that were actually masked/predicted (context frames are already correct).
+
+    :param logits: (b, K, n) mask-transformer output over the base-layer codebook
+    :param mask: (b, n) bool, True where the base-layer token was masked (i.e. predicted)
+    :param all_codes: (q, b, code_dim, n) GT residual-VQ codes for this motion (vq_model.encode output)
+    :param motion: (b, T, dim_pose) GT raw motion, T == n * unit_length
+    '''
+    codebook = vq_model.quantizer.codebooks[0]  # (K, code_dim), frozen VQ codebook of layer 0
+
+    probs = F.softmax(logits, dim=1)                            # (b, K, n)
+    z_soft = torch.einsum('bkn,kd->bdn', probs, codebook)        # (b, code_dim, n)
+
+    hard_idx = probs.argmax(dim=1)                               # (b, n)
+    z_hard = F.embedding(hard_idx, codebook).permute(0, 2, 1)    # (b, code_dim, n)
+
+    # Straight-Through Estimator: forward uses the real (hard) codebook vector,
+    # backward flows through the soft categorical distribution over the codebook
+    z_st = z_hard.detach() + (z_soft - z_soft.detach())          # (b, code_dim, n)
+
+    # context positions keep the GT layer-0 code; masked positions carry the predicted (ST) code
+    mask_c = mask.unsqueeze(1)                                   # (b, 1, n)
+    layer0 = torch.where(mask_c, z_st, all_codes[0])
+
+    # residual layers (1..Q-1) are teacher-forced with GT, since this transformer only
+    # ever predicts the base layer -- isolates the effect of base-token errors
+    z_full = layer0 + all_codes[1:].sum(dim=0)                   # (b, code_dim, n)
+
+    x_hat = vq_model.decoder(z_full)                             # (b, T, dim_pose), frozen but differentiable
+
+    frame_mask = mask.unsqueeze(-1).expand(-1, -1, unit_length).reshape(mask.shape[0], -1)  # (b, n*r)
+    T = x_hat.shape[1]
+    frame_mask = frame_mask[:, :T]
+    gt_motion = motion[:, :T]
+
+    frame_mask_f = frame_mask.float().unsqueeze(-1)              # (b, T, 1)
+    n_valid = frame_mask_f.sum().clamp(min=1)
+
+    L_rec = ((x_hat - gt_motion).abs() * frame_mask_f).sum() / (n_valid * gt_motion.shape[-1])
+
+    pos_slice = slice(4, (joints_num - 1) * 3 + 4)
+    L_pos = ((x_hat[..., pos_slice] - gt_motion[..., pos_slice]).abs() * frame_mask_f).sum() \
+            / (n_valid * (pos_slice.stop - pos_slice.start))
+
+    return L_rec + L_pos, L_rec, L_pos
+
+
 def cal_loss(pred, labels, ignore_index=None, smoothing=0.):
     '''Calculate cross entropy loss, apply label smoothing if needed.'''
     # print(pred.shape, labels.shape) #torch.Size([64, 1028, 55]) torch.Size([64, 55])
