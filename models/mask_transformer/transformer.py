@@ -239,7 +239,20 @@ class MaskTransformer(nn.Module):
         logits = self.output_process(output) #(seqlen, b, e) -> (b, ntoken, seqlen)
         return logits
 
-    def forward(self, ids, y, m_lens, counts=None, lambda_consistency=0.0):
+    def forward(self, ids, y, m_lens, counts=None, lambda_consistency=0.0, consistency_type='argmax',
+               vq_model=None, all_codes=None, lambda_margin=0.0, confusable_idx=None, margin=1.0,
+               code_dist=None, debug_print_topk=False, debug_topk=5, debug_num_motions=3, debug_num_positions=3):
+        '''
+        :param counts: (b,) 모션별 캡션 개수. None이면 캡션 1개짜리 일반 forward (예: validation).
+        :param consistency_type: 'argmax' -> _consistency_option1 (CE 재가중, 기존 방식)
+                                 'motion' -> _consistency_option2_motion (soft_emb+STE로 실제 디코드해서 그룹 평균과의 편차)
+                                 'motion_lookup' -> _consistency_option3_motion_lookup (soft_emb 없이, 사전계산된
+                                 코드간 거리표를 argmax 예측 쌍에 조회해서 CE 재가중)
+        :param vq_model, all_codes: consistency_type='motion'일 때 필요한 frozen VQ 디코더/GT 잔차코드
+        :param confusable_idx, margin: lambda_margin>0일 때 필요, tools.build_confusable_idx()의 출력
+        :param code_dist: consistency_type='motion_lookup'일 때 필요, tools.build_code_distance_matrix()의 출력
+        :param debug_print_topk: True면 배치 앞쪽 몇 개 모션의 캡션별 top-k 예측/확률을 stdout에 출력 (디버깅용)
+        '''
         bs, ntokens = ids.shape
         device = ids.device
 
@@ -317,13 +330,133 @@ class MaskTransformer(nn.Module):
             pred_id = logits.argmax(dim=1)
             acc = (pred_id == labels).masked_select(mask).float().mean().item()
 
+            if debug_print_topk:
+                print_caption_topk_debug(logits, labels, ids, mask, counts,
+                                         topk=debug_topk, num_motions=debug_num_motions,
+                                         num_positions=debug_num_positions)
+
+            total_loss = ce_loss
+            log_dict = {'ce_loss': ce_loss.item()}
+
             if lambda_consistency > 0:
-                cons_loss = self._consistency_option1(logits, labels, ids, mask, counts)
-                return ce_loss + lambda_consistency * cons_loss, pred_id, acc
-            return ce_loss, pred_id, acc
+                if consistency_type == 'argmax':
+                    cons_loss = self._consistency_option1(logits, labels, ids, mask, counts)
+                elif consistency_type == 'motion':
+                    assert vq_model is not None and all_codes is not None, \
+                        "consistency_type='motion' requires vq_model and all_codes"
+                    cons_loss = self._consistency_option2_motion(logits, mask, all_codes, counts, vq_model)
+                elif consistency_type == 'motion_lookup':
+                    assert code_dist is not None, \
+                        "consistency_type='motion_lookup' requires code_dist"
+                    cons_loss = self._consistency_option3_motion_lookup(logits, labels, mask, counts, code_dist)
+                else:
+                    raise NotImplementedError(f"Unknown consistency_type: {consistency_type}")
+                total_loss = total_loss + lambda_consistency * cons_loss
+                log_dict['cons_loss'] = cons_loss.item()
+
+            if lambda_margin > 0:
+                assert confusable_idx is not None, "lambda_margin>0 requires confusable_idx"
+                margin_loss = confusable_margin_loss(logits, labels, mask, confusable_idx, margin=margin)
+                total_loss = total_loss + lambda_margin * margin_loss
+                log_dict['margin_loss'] = margin_loss.item()
+
+            return total_loss, pred_id, acc, log_dict
         else:
             ce_loss, pred_id, acc = cal_performance(logits, labels, ignore_index=self.mask_id)
-            return ce_loss, pred_id, acc
+            return ce_loss, pred_id, acc, {'ce_loss': ce_loss.item()}
+
+    def _consistency_option2_motion(self, logits, mask, all_codes, counts, vq_model):
+        '''
+        같은 모션의 K개 캡션이 예측한 토큰을 각각 raw motion으로 디코드한 뒤,
+        (GT와 비교하는 게 아니라) 그룹 평균 모션 대비 얼마나 벗어나는지를 loss로 준다.
+        예측 토큰이 서로 달라도 디코드된 raw motion이 비슷하면 loss가 작다 — RVQ의
+        code aliasing(비슷하게 디코드되는 서로 다른 코드)을 자연스럽게 흡수하기 위함.
+        마스크 안 된(=컨텍스트로 그대로 넣어준) 위치는 캡션마다 이미 동일한 GT라
+        비교에서 제외한다 (frame_mask).
+        :param logits: (bs, K, n)
+        :param mask: (bs, n) bool, 모션 단위로 공유되는 mask (그룹 내 모든 캡션이 동일)
+        :param all_codes: (q, bs, code_dim, n), GT residual-VQ 코드. ids와 동일하게 캡션 수만큼 확장되어 있어야 함
+        :param counts: (b,) 모션별 캡션 개수
+        :param vq_model: frozen RVQVAE
+        '''
+        codebook0 = vq_model.quantizer.codebooks[0]  # (K, code_dim)
+
+        probs = F.softmax(logits, dim=1)                            # (bs, K, n)
+        z_soft = torch.einsum('bkn,kd->bdn', probs, codebook0)       # (bs, code_dim, n)
+        hard_idx = probs.argmax(dim=1)                                # (bs, n)
+        z_hard = F.embedding(hard_idx, codebook0).permute(0, 2, 1)    # (bs, code_dim, n)
+        # Straight-Through: forward는 실제 codebook 벡터, backward는 soft 분포로 흐름
+        z_st = z_hard.detach() + (z_soft - z_soft.detach())
+
+        mask_c = mask.unsqueeze(1)                                    # (bs, 1, n)
+        layer0 = torch.where(mask_c, z_st, all_codes[0])              # 컨텍스트는 GT 유지, 마스크 위치만 예측값
+        z_full = layer0 + all_codes[1:].sum(dim=0)                    # 잔차 레이어는 GT로 teacher-force
+
+        x_hat = vq_model.decoder(z_full)                              # (bs, T, dim_pose)
+
+        unit_length = self.opt.unit_length
+        frame_mask = mask.unsqueeze(-1).expand(-1, -1, unit_length).reshape(mask.shape[0], -1)  # (bs, n*unit)
+        frame_mask = frame_mask[:, :x_hat.shape[1]].float().unsqueeze(-1)                        # (bs, T, 1)
+
+        loss = x_hat.new_zeros(())
+        n_groups = 0
+        start = 0
+        for k in counts:
+            k = k.item()
+            if k > 1:
+                group = x_hat[start:start + k]              # (k, T, d)
+                group_mask = frame_mask[start:start + k]     # (k, T, 1), 그룹 내 전부 동일
+                denom = group_mask.sum(dim=0, keepdim=True).clamp(min=1)
+                group_mean = (group * group_mask).sum(dim=0, keepdim=True) / denom  # (1, T, d)
+                diff = ((group - group_mean).abs() * group_mask).sum()
+                n_valid = (group_mask.sum() * group.shape[-1]).clamp(min=1)
+                loss = loss + diff / n_valid
+                n_groups += 1
+            start += k
+
+        return loss / max(n_groups, 1)
+
+    def _consistency_option3_motion_lookup(self, logits, labels, mask, counts, code_dist):
+        '''
+        _consistency_option2_motion과 목적은 같지만(캡션끼리 raw-motion이 일치하도록),
+        soft_emb/decoder를 전혀 태우지 않는다. 대신 사전계산된 코드간 raw-motion 거리표
+        (code_dist, K×K, 0~1 정규화)를 argmax 예측 쌍에 조회해서, CE를 재가중하는 방식.
+        _consistency_option1과 뼈대는 동일하고(hard argmax + no_grad + CE 재가중),
+        "맞았다/틀렸다" 이진 가중치 대신 raw-motion 거리라는 연속값을 가중치로 쓴다는 점만 다르다.
+        :param logits: (bs, K, n)
+        :param labels: (bs, n)
+        :param mask: (bs, n) bool, 모션 단위로 공유되는 mask
+        :param counts: (b,) 모션별 캡션 개수
+        :param code_dist: (K, K), tools.build_code_distance_matrix()의 출력
+        '''
+        with torch.no_grad():
+            preds = logits.argmax(dim=1)  # (bs, n), hard, soft_emb 없음
+            cons_weight = torch.zeros_like(mask, dtype=torch.float)
+
+            start = 0
+            for k in counts:
+                k = k.item()
+                masked = mask[start]  # (n,), 그룹 내 공유
+
+                if k >= 2:
+                    preds_i = preds[start:start + k]  # (k, n)
+                    pair_dist = torch.zeros_like(masked, dtype=torch.float)
+                    n_pairs = 0
+                    for a in range(k):
+                        for b in range(a + 1, k):
+                            # 캡션 a, b가 예측한 토큰이 raw-motion 상 얼마나 다른지 조회
+                            pair_dist = pair_dist + code_dist[preds_i[a], preds_i[b]]
+                            n_pairs += 1
+                    weight_i = (pair_dist / n_pairs) * masked.float()
+                else:
+                    weight_i = torch.zeros_like(masked, dtype=torch.float)
+
+                cons_weight[start:start + k] = weight_i.unsqueeze(0).expand(k, -1)
+                start += k
+
+        ce_per_token = F.cross_entropy(logits, labels, ignore_index=self.mask_id, reduction='none')
+        n = cons_weight.sum().clamp(min=1)
+        return (ce_per_token * cons_weight).sum() / n
 
     def _consistency_option1(self, logits, labels, ids, mask, counts):
         '''

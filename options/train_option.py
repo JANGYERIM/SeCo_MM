@@ -21,7 +21,29 @@ class TrainT2MOptions(BaseOptions):
 
         self.parser.add_argument('--is_continue', action="store_true", help='Is this trial continuing previous state?')
         self.parser.add_argument('--lambda_consistency', type=float, default=0.0, help='Weight for consistency loss between different captions of the same motion, 0.0=disabled')
-        self.parser.add_argument('--consistency_type', type=str, default='argmax', choices=['argmax', 'kl'], help = 'Type of consistency loss: argmax(discrete weighting) or kl (distribution-level)')
+        self.parser.add_argument('--consistency_type', type=str, default='argmax',
+                            choices=['argmax', 'kl', 'motion', 'motion_lookup'],
+                            help='Type of consistency loss: argmax (CE reweighting on mismatched captions), '
+                                 'kl (distribution-level, not yet implemented), '
+                                 'motion (decode each caption prediction with the frozen VQ decoder via '
+                                 'soft_emb/STE and penalize deviation from the per-motion group mean in raw-motion space), '
+                                 'motion_lookup (no decoder/soft_emb: reweight CE using a precomputed '
+                                 'code-to-code raw-motion distance table looked up on the argmax predictions)')
+
+        '''Confusable-pair margin loss'''
+        self.parser.add_argument('--lambda_margin', type=float, default=0.0,
+                            help='Weight for the confusable-pair margin loss, 0.0=disabled')
+        self.parser.add_argument('--margin_topk', type=int, default=5,
+                            help='Number of raw-motion nearest-neighbor codes (per GT code) to treat as confusable negatives')
+        self.parser.add_argument('--margin', type=float, default=1.0,
+                            help='Required logit gap between GT code and its confusable neighbors')
+
+        '''Debug'''
+        self.parser.add_argument('--debug_print_topk', action="store_true",
+                            help='Print per-caption top-k predicted tokens/probs for a few motions each step (debug only)')
+        self.parser.add_argument('--debug_topk', type=int, default=5, help='k for --debug_print_topk')
+        self.parser.add_argument('--debug_num_motions', type=int, default=3, help='Number of motions to print for --debug_print_topk')
+        self.parser.add_argument('--debug_num_positions', type=int, default=3, help='Number of masked positions per motion to print for --debug_print_topk')
         self.parser.add_argument('--gumbel_sample', action="store_true", help='Strategy for token sampling, True: Gumbel sampling, False: Categorical sampling')
         self.parser.add_argument('--share_weight', action="store_true", help='Whether to share weight for projection/embedding, for residual transformer.')
 

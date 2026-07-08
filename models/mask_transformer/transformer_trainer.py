@@ -22,6 +22,17 @@ class MaskTransformerTrainer:
         self.device = args.device
         self.vq_model.eval()
 
+        # confusable pair margin loss: 코드북이 frozen이므로 학습 시작 전 딱 한 번만 계산해두면 됨
+        self.confusable_idx = None
+        if getattr(args, 'lambda_margin', 0.0) > 0:
+            self.confusable_idx = build_confusable_idx(
+                self.vq_model, topk=args.margin_topk, device=self.device)
+
+        # motion_lookup consistency: 코드 간 raw-motion 거리표도 마찬가지로 한 번만 계산
+        self.code_dist = None
+        if getattr(args, 'consistency_type', None) == 'motion_lookup':
+            self.code_dist = build_code_distance_matrix(self.vq_model, device=self.device)
+
         if args.is_train:
             self.logger = SummaryWriter(args.log_dir)
 
@@ -46,16 +57,18 @@ class MaskTransformerTrainer:
         # validation: 샘플당 캡션 1개만 사용
         conds = [caps[0] for caps in captions_list]
 
-        _loss, _pred_ids, _acc = self.t2m_transformer(code_idx[..., 0], conds, m_lens)
+        _loss, _pred_ids, _acc, _log = self.t2m_transformer(code_idx[..., 0], conds, m_lens)
 
         return _loss, _acc
 
-    def update(self, batch_data):
+    def update(self, batch_data, it=None):
         captions_list, motion, m_lens = batch_data
         motion = motion.detach().float().to(self.device)
         m_lens = m_lens.detach().long().to(self.device)
 
-        code_idx, _ = self.vq_model.encode(motion)
+        # all_codes: (q, b, code_dim, n), consistency_type='motion'일 때만 실제로 쓰이는 GT 잔차코드
+        # (margin loss는 confusable_idx만 있으면 되고 all_codes/vq_model은 필요 없음)
+        code_idx, all_codes = self.vq_model.encode(motion)
         m_lens_vq = m_lens // 4
         ids = code_idx[..., 0]  # (b, seqlen)
 
@@ -65,10 +78,36 @@ class MaskTransformerTrainer:
         ids_expanded = torch.repeat_interleave(ids, counts, dim=0)
         m_lens_expanded = torch.repeat_interleave(m_lens_vq, counts, dim=0)
 
-        loss, _pred_ids, acc = self.t2m_transformer(
+        extra_kwargs = {}
+        if self.opt.consistency_type == 'motion':
+            # all_codes 배치 축(dim=1)도 캡션 수만큼 함께 확장 (motion consistency에서만 필요)
+            all_codes_expanded = torch.repeat_interleave(all_codes, counts, dim=1)
+            extra_kwargs['vq_model'] = self.vq_model
+            extra_kwargs['all_codes'] = all_codes_expanded
+        elif self.opt.lambda_margin > 0:
+            # margin loss는 vq_model.decoder를 태우지 않고 confusable_idx(로짓 인덱싱)만 쓰므로
+            # vq_model/all_codes 없이도 동작한다
+            pass
+
+        # "p/it:.. loss:.." 요약 라인이 찍히는 스텝(it % log_every == 0)에만 debug 로그도 같이 출력
+        debug_print_topk = self.opt.debug_print_topk
+        if debug_print_topk and it is not None:
+            debug_print_topk = (it % self.opt.log_every == 0)
+
+        loss, _pred_ids, acc, log_dict = self.t2m_transformer(
             ids_expanded, flat_captions, m_lens_expanded,
             counts=counts,
-            lambda_consistency=self.opt.lambda_consistency
+            lambda_consistency=self.opt.lambda_consistency,
+            consistency_type=self.opt.consistency_type,
+            lambda_margin=self.opt.lambda_margin,
+            confusable_idx=self.confusable_idx,
+            margin=self.opt.margin,
+            code_dist=self.code_dist,
+            debug_print_topk=debug_print_topk,
+            debug_topk=self.opt.debug_topk,
+            debug_num_motions=self.opt.debug_num_motions,
+            debug_num_positions=self.opt.debug_num_positions,
+            **extra_kwargs,
         )
 
         self.opt_t2m_transformer.zero_grad()
@@ -76,7 +115,7 @@ class MaskTransformerTrainer:
         self.opt_t2m_transformer.step()
         self.scheduler.step()
 
-        return loss.item(), acc
+        return loss.item(), acc, log_dict
 
     def save(self, file_name, ep, total_it):
         t2m_trans_state_dict = self.t2m_transformer.state_dict()
@@ -147,10 +186,12 @@ class MaskTransformerTrainer:
                 if it < self.opt.warm_up_iter:
                     self.update_lr_warm_up(it, self.opt.warm_up_iter, self.opt.lr)
 
-                loss, acc = self.update(batch_data=batch)
+                loss, acc, log_dict = self.update(batch_data=batch, it=it)
                 logs['loss'] += loss
                 logs['acc'] += acc
                 logs['lr'] += self.opt_t2m_transformer.param_groups[0]['lr']
+                for tag, value in log_dict.items():
+                    logs[tag] += value
 
                 if it % self.opt.log_every == 0:
                     mean_loss = OrderedDict()
