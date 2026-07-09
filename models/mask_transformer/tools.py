@@ -144,7 +144,40 @@ def cal_performance(pred, labels, ignore_index=None, smoothing=0., tk=1):
     return loss, pred_id, acc
 
 
-def feedback_loss(vq_model, logits, mask, all_codes, motion, unit_length, joints_num):
+class _IPWSoftEmbed(torch.autograd.Function):
+    '''
+    z_soft = softmax(logits)^T @ codebook. The natural chain rule gives
+    dL/dlogit_k = p_k * A_k, where A_k = <g, c_k - z_soft> (g = dL/dz_soft) -- codes
+    that currently have low probability barely get any gradient even if their
+    direction (A_k) is exactly right (see feedback_loss docstring).
+
+    This reweights the backward to dL/dlogit_k = A_k * p_k^(1-ipw_alpha):
+      ipw_alpha=0  -> p_k * A_k            (unchanged, original behavior)
+      ipw_alpha=1  -> A_k                  (p_k factor fully cancelled, inverse-probability weighting)
+      0<alpha<1    -> partial correction
+    No epsilon/clamping needed: p_k >= 0 always, and pow() is well-defined there
+    (0**positive = 0, 0**0 = 1), so this never divides by anything.
+    '''
+    @staticmethod
+    def forward(ctx, logits, codebook, ipw_alpha):
+        probs = F.softmax(logits, dim=1)                         # (b, K, n)
+        z_soft = torch.einsum('bkn,kd->bdn', probs, codebook)    # (b, code_dim, n)
+        ctx.save_for_backward(probs, codebook, z_soft)
+        ctx.ipw_alpha = ipw_alpha
+        return z_soft
+
+    @staticmethod
+    def backward(ctx, grad_z_soft):
+        probs, codebook, z_soft = ctx.saved_tensors
+        # <g, c_k> per k, and <g, z_soft> (broadcast over k) -> A_k = <g, c_k - z_soft>
+        g_dot_ck = torch.einsum('bdn,kd->bkn', grad_z_soft, codebook)        # (b, K, n)
+        g_dot_zsoft = torch.einsum('bdn,bdn->bn', grad_z_soft, z_soft).unsqueeze(1)  # (b, 1, n)
+        A_k = g_dot_ck - g_dot_zsoft                              # (b, K, n)
+        grad_logits = A_k * probs.pow(1 - ctx.ipw_alpha)          # p_k^(1-alpha) weighting
+        return grad_logits, None, None
+
+
+def feedback_loss(vq_model, logits, mask, all_codes, motion, unit_length, joints_num, ipw_alpha=0.0):
     '''
     "Real-world simulator" feedback: decode the predicted base-layer tokens back into
     raw motion space with the frozen VQ decoder, and compare against GT motion only at
@@ -154,13 +187,18 @@ def feedback_loss(vq_model, logits, mask, all_codes, motion, unit_length, joints
     :param mask: (b, n) bool, True where the base-layer token was masked (i.e. predicted)
     :param all_codes: (q, b, code_dim, n) GT residual-VQ codes for this motion (vq_model.encode output)
     :param motion: (b, T, dim_pose) GT raw motion, T == n * unit_length
+    :param ipw_alpha: 0 = original p_k-weighted z_soft gradient, 1 = fully inverse-probability-
+        weighted (p_k factor cancelled), in-between = partial correction. See _IPWSoftEmbed.
     '''
     codebook = vq_model.quantizer.codebooks[0]  # (K, code_dim), frozen VQ codebook of layer 0
 
-    probs = F.softmax(logits, dim=1)                            # (b, K, n)
-    z_soft = torch.einsum('bkn,kd->bdn', probs, codebook)        # (b, code_dim, n)
+    if ipw_alpha > 0:
+        z_soft = _IPWSoftEmbed.apply(logits, codebook, ipw_alpha)  # (b, code_dim, n)
+    else:
+        probs = F.softmax(logits, dim=1)                            # (b, K, n)
+        z_soft = torch.einsum('bkn,kd->bdn', probs, codebook)        # (b, code_dim, n)
 
-    hard_idx = probs.argmax(dim=1)                               # (b, n)
+    hard_idx = logits.argmax(dim=1)                              # (b, n), grad-free either way
     z_hard = F.embedding(hard_idx, codebook).permute(0, 2, 1)    # (b, code_dim, n)
 
     # Straight-Through Estimator: forward uses the real (hard) codebook vector,

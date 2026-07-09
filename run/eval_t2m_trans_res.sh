@@ -1,19 +1,19 @@
 #!/usr/bin/bash
 
-#SBATCH -J SeCo_Eval_M_P5_V1_1
+#SBATCH -J SeCo_Eval_M_P5_V1_3
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-gpu=8
 #SBATCH --mem-per-gpu=29G
 #SBATCH -p batch_grad
 #SBATCH -w ariel-v2
 #SBATCH -t 1-0
-#SBATCH -o /nas2/data/dpfla3573/code/MM_SeCo/logs/slurm-%A_Eval_M_P5_V1_1.out
+#SBATCH -o /nas2/data/dpfla3573/code/MM_SeCo/logs/slurm-%A_Eval_M_P5_V1_3.out
 
 cd /nas2/data/dpfla3573/code/MM_SeCo
 export PYTHONPATH=/nas2/data/dpfla3573/code/MM_SeCo:$PYTHONPATH
 
 /nas2/data/dpfla3573/anaconda3/envs/momask/bin/python run/eval_t2m_trans_res.py \
-  --name M_P5_V1_1 \
+  --name M_P5_V1-2 \
   --gpu_id 0 \
   --use_res_model \
   --dataset_name t2m \

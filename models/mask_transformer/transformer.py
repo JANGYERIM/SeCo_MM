@@ -304,14 +304,25 @@ class MaskTransformer(nn.Module):
         logits = self.trans_forward(x_ids, cond_vector, ~non_pad_mask, force_mask)
         ce_loss, pred_id, acc = cal_performance(logits, labels, ignore_index=self.mask_id)
 
+        # debug metric: mean softmax probability assigned to the true (GT) token,
+        # at masked/predicted positions only -- lets you watch p(GT) rise over training,
+        # independent of the argmax-based `acc` above (safe_labels avoids indexing with
+        # mask_id, which is out of range for logits/probs at non-masked positions)
+        with torch.no_grad():
+            probs = F.softmax(logits, dim=1)
+            safe_labels = torch.where(mask, labels, torch.zeros_like(labels))
+            gt_prob = probs.gather(1, safe_labels.unsqueeze(1)).squeeze(1)
+            gt_prob = gt_prob[mask].mean() if mask.any() else gt_prob.new_zeros(())
+
         if vq_model is not None and self.opt.lambda_feedback > 0:
             fb_loss, L_rec, L_pos = feedback_loss(vq_model, logits, mask, all_codes, motion,
-                                                  self.opt.unit_length, self.opt.joints_num)
+                                                  self.opt.unit_length, self.opt.joints_num,
+                                                  ipw_alpha=getattr(self.opt, 'ipw_alpha', 0.0))
             log_dict = {'ce_loss': ce_loss.item(), 'fb_loss': fb_loss.item(),
-                       'L_rec': L_rec.item(), 'L_pos': L_pos.item()}
+                       'L_rec': L_rec.item(), 'L_pos': L_pos.item(), 'gt_prob': gt_prob.item()}
             return ce_loss + self.opt.lambda_feedback * fb_loss, pred_id, acc, log_dict
 
-        return ce_loss, pred_id, acc, {'ce_loss': ce_loss.item()}
+        return ce_loss, pred_id, acc, {'ce_loss': ce_loss.item(), 'gt_prob': gt_prob.item()}
 
     def forward_with_cond_scale(self,
                                 motion_ids,
