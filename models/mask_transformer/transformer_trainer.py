@@ -26,6 +26,12 @@ class MaskTransformerTrainer:
         for p in self.vq_model.parameters():
             p.requires_grad_(False)
 
+        # confusable pair margin loss: 코드북이 frozen이므로 학습 시작 전 딱 한 번만 계산해두면 됨
+        self.confusable_idx = None
+        if getattr(args, 'lambda_margin', 0.0) > 0:
+            self.confusable_idx = build_confusable_idx(
+                self.vq_model, topk=args.margin_topk, device=self.device)
+
         if args.is_train:
             self.logger = SummaryWriter(args.log_dir)
 
@@ -53,9 +59,11 @@ class MaskTransformerTrainer:
 
         # vq_model/motion/all_codes: enables the feedback module inside t2m_transformer.forward()
         # (gated by self.opt.lambda_feedback there, so this is a no-op when it's 0)
+        # confusable_idx: enables the margin loss (gated by self.opt.lambda_margin there)
         _loss, _pred_ids, _acc, _log = self.t2m_transformer(
             code_idx[..., 0], conds, m_lens,
-            vq_model=self.vq_model, motion=motion, all_codes=all_codes
+            vq_model=self.vq_model, motion=motion, all_codes=all_codes,
+            confusable_idx=self.confusable_idx, margin=self.opt.margin
         )
 
         return _loss, _acc, _log

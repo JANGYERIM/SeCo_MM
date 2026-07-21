@@ -28,6 +28,14 @@ class TrainT2MOptions(BaseOptions):
                                  '1 = p_k factor fully cancelled (dL/dlogit_k = A_k), in between = partial '
                                  'correction (dL/dlogit_k = A_k * p_k^(1-ipw_alpha)).')
 
+        '''Confusable-pair margin loss'''
+        self.parser.add_argument('--lambda_margin', type=float, default=0.0,
+                            help='Weight for the confusable-pair margin loss, 0.0=disabled')
+        self.parser.add_argument('--margin_topk', type=int, default=5,
+                            help='Number of raw-motion nearest-neighbor codes (per GT code) to treat as confusable negatives')
+        self.parser.add_argument('--margin', type=float, default=1.0,
+                            help='Required logit gap between GT code and its confusable neighbors')
+
         self.parser.add_argument('--is_continue', action="store_true", help='Is this trial continuing previous state?')
         self.parser.add_argument('--gumbel_sample', action="store_true", help='Strategy for token sampling, True: Gumbel sampling, False: Categorical sampling')
         self.parser.add_argument('--share_weight', action="store_true", help='Whether to share weight for projection/embedding, for residual transformer.')

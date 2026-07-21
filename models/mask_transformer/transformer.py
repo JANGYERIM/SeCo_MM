@@ -239,7 +239,8 @@ class MaskTransformer(nn.Module):
         logits = self.output_process(output) #(seqlen, b, e) -> (b, ntoken, seqlen)
         return logits
 
-    def forward(self, ids, y, m_lens, vq_model=None, motion=None, all_codes=None):
+    def forward(self, ids, y, m_lens, vq_model=None, motion=None, all_codes=None,
+               confusable_idx=None, margin=1.0):
         '''
         :param ids: (b, n)
         :param y: raw text for cond_mode=text, (b, ) for cond_mode=action
@@ -247,6 +248,8 @@ class MaskTransformer(nn.Module):
         :param vq_model, motion, all_codes: optional, enable the raw-motion
             "real-world simulator" feedback loss, weighted by self.opt.lambda_feedback
             (see feedback_loss in tools.py)
+        :param confusable_idx, margin: optional, enable the confusable-pair margin loss,
+            weighted by self.opt.lambda_margin (see confusable_margin_loss in tools.py)
         :return:
         '''
 
@@ -314,15 +317,22 @@ class MaskTransformer(nn.Module):
             gt_prob = probs.gather(1, safe_labels.unsqueeze(1)).squeeze(1)
             gt_prob = gt_prob[mask].mean() if mask.any() else gt_prob.new_zeros(())
 
+        total_loss = ce_loss
+        log_dict = {'ce_loss': ce_loss.item(), 'gt_prob': gt_prob.item()}
+
         if vq_model is not None and self.opt.lambda_feedback > 0:
             fb_loss, L_rec, L_pos = feedback_loss(vq_model, logits, mask, all_codes, motion,
                                                   self.opt.unit_length, self.opt.joints_num,
                                                   ipw_alpha=getattr(self.opt, 'ipw_alpha', 0.0))
-            log_dict = {'ce_loss': ce_loss.item(), 'fb_loss': fb_loss.item(),
-                       'L_rec': L_rec.item(), 'L_pos': L_pos.item(), 'gt_prob': gt_prob.item()}
-            return ce_loss + self.opt.lambda_feedback * fb_loss, pred_id, acc, log_dict
+            total_loss = total_loss + self.opt.lambda_feedback * fb_loss
+            log_dict.update({'fb_loss': fb_loss.item(), 'L_rec': L_rec.item(), 'L_pos': L_pos.item()})
 
-        return ce_loss, pred_id, acc, {'ce_loss': ce_loss.item(), 'gt_prob': gt_prob.item()}
+        if confusable_idx is not None and self.opt.lambda_margin > 0:
+            margin_loss = confusable_margin_loss(logits, labels, mask, confusable_idx, margin=margin)
+            total_loss = total_loss + self.opt.lambda_margin * margin_loss
+            log_dict['margin_loss'] = margin_loss.item()
+
+        return total_loss, pred_id, acc, log_dict
 
     def forward_with_cond_scale(self,
                                 motion_ids,
