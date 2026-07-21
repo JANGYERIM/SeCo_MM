@@ -1,19 +1,19 @@
 #!/usr/bin/bash
 
-#SBATCH -J CCE_M_P6_V1_7
+#SBATCH -J CCE_M_P6_V1_4
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-gpu=8
 #SBATCH --mem-per-gpu=29G
 #SBATCH -p batch_grad
 #SBATCH -w ariel-v3
 #SBATCH -t 1-0
-#SBATCH -o /nas2/data/dpfla3573/code/MM_SeCo/logs/slurm-%A_Eval_CCE_M_P6_V1_7(temp=0.).out
+#SBATCH -o /nas2/data/dpfla3573/code/MM_SeCo/logs/slurm-%A_Eval_CCE_M_P6_V1_4(temp=0.).out
 
 cd /nas2/data/dpfla3573/code/MM_SeCo
 export PYTHONPATH=/nas2/data/dpfla3573/code/MM_SeCo:$PYTHONPATH
 
 /nas2/data/dpfla3573/anaconda3/envs/momask/bin/python run/eval_cce.py \
-  --name M_P6_V1_7 \
+  --name M_P6_V1_4 \
   --gpu_id 0 \
   --dataset_name t2m \
   --which_epoch all \
